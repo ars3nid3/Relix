@@ -1,0 +1,14 @@
+{
+    "layers": {
+        "humanoid": [
+            {
+                "texture": "relix:pharaoh_headdress"
+            }
+        ],
+        "humanoid_baby": [
+            {
+                "texture": "relix:pharaoh_headdress"
+            }
+        ]
+    }
+}

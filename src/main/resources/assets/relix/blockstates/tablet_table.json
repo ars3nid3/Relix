@@ -1,0 +1,37 @@
+{
+  "multipart": [
+    {
+      "when": { "facing": "north" },
+      "apply": { "model": "relix:block/tablet_table_base" }
+    },
+    {
+      "when": { "facing": "east" },
+      "apply": { "model": "relix:block/tablet_table_base", "y": 90 }
+    },
+    {
+      "when": { "facing": "south" },
+      "apply": { "model": "relix:block/tablet_table_base", "y": 180 }
+    },
+    {
+      "when": { "facing": "west" },
+      "apply": { "model": "relix:block/tablet_table_base", "y": 270 }
+    },
+
+    {
+      "when": { "facing": "north", "has_tablet": "true" },
+      "apply": { "model": "relix:block/tablet_table_plaque" }
+    },
+    {
+      "when": { "facing": "east", "has_tablet": "true" },
+      "apply": { "model": "relix:block/tablet_table_plaque", "y": 90 }
+    },
+    {
+      "when": { "facing": "south", "has_tablet": "true" },
+      "apply": { "model": "relix:block/tablet_table_plaque", "y": 180 }
+    },
+    {
+      "when": { "facing": "west", "has_tablet": "true" },
+      "apply": { "model": "relix:block/tablet_table_plaque", "y": 270 }
+    }
+  ]
+}

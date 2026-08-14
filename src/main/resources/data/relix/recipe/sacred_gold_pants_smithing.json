@@ -1,0 +1,9 @@
+{
+    "type": "minecraft:smithing_transform",
+    "addition": "relix:sacred_gemstone",
+    "base": "minecraft:golden_leggings",
+    "result": {
+        "id": "relix:sacred_gold_pants"
+    },
+    "template": "relix:sacred_gold_upgrade_smithing_template"
+}

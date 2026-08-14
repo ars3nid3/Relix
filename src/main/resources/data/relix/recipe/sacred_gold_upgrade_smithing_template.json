@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "key": {
+      "#": "relix:hieroglyph_tablet",
+      "S": "minecraft:sandstone",
+      "C": "minecraft:netherite_upgrade_smithing_template"
+    },
+    "pattern": [
+      "#S#",
+      "#C#",
+      "###"
+    ],
+    "result": {
+      "count": 1,
+      "id": "relix:sacred_gold_upgrade_smithing_template"
+    }
+  }

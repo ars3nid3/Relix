@@ -1,0 +1,19 @@
+{
+    "layers": {
+        "humanoid": [
+            {
+                "texture": "relix:sacred_gold"
+            }
+        ],
+        "humanoid_leggings": [
+            {
+                "texture": "relix:sacred_gold"
+            }
+        ],
+        "humanoid_baby": [
+            {
+                "texture": "relix:sacred_gold"
+            }
+        ]
+    }
+}

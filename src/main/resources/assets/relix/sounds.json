@@ -1,0 +1,66 @@
+{
+    "pharaoh_theme": {
+        "sounds": [
+            {
+                "name": "relix:music/pharaoh_theme",
+                "stream": true
+            }
+        ]
+    },
+    "pharaoh_shockwave": {
+        "sounds": [
+            {
+                "name": "relix:pharaoh/shockwave"
+            }
+        ]
+    },
+    "dilation": {
+        "sounds": [
+            {
+                "name": "relix:effects/dilation"
+            }
+        ]
+    },
+    "pharaoh_idle": {
+        "sounds": [
+            {
+                "name": "relix:pharaoh/idle"
+            }
+        ]
+    },
+    "pharaoh_hurt": {
+        "sounds": [
+            {
+                "name": "relix:pharaoh/hurt"
+            }
+        ]
+    },
+    "pharaoh_death": {
+        "sounds": [
+            {
+                "name": "relix:pharaoh/death"
+            }
+        ]
+    },
+    "pharaoh_summon": {
+        "sounds": [
+            {
+                "name": "relix:pharaoh/summon"
+            }
+        ]
+    },
+    "pharaoh_bolt_shoot": {
+        "sounds": [
+            {
+                "name": "relix:pharaoh/bolt_shoot"
+            }
+        ]        
+    },
+    "earthquake": {
+        "sounds": [
+            {
+                "name": "relix:effects/earthquake"
+            }
+        ]
+    }
+}

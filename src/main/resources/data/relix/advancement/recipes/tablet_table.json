@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hieroglyph_tablet": {
+      "conditions": {
+        "items": [
+          {
+            "items": "relix:hieroglyph_tablet"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "relix:tablet_table"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_hieroglyph_tablet"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "relix:tablet_table"
+    ]
+  }
+}

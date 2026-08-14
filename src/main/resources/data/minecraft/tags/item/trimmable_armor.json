@@ -1,0 +1,9 @@
+{
+    "replace": false,
+    "values": [
+        "relix:sacred_gold_helmet",
+        "relix:sacred_gold_chestplate",
+        "relix:sacred_gold_pants",
+        "relix:sacred_gold_boots"
+    ]
+}

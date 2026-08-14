@@ -1,0 +1,65 @@
+{
+  "parent": "relix:adventure/pharaohs_curse",
+  "criteria": {
+    "sacred_gold_boots": {
+      "conditions": {
+        "items": [
+          {
+            "items": "relix:sacred_gold_boots"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "sacred_gold_chestplate": {
+      "conditions": {
+        "items": [
+          {
+            "items": "relix:sacred_gold_chestplate"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "sacred_gold_helmet": {
+      "conditions": {
+        "items": [
+          {
+            "items": "relix:sacred_gold_helmet"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "sacred_gold_leggings": {
+      "conditions": {
+        "items": [
+          {
+            "items": "relix:sacred_gold_pants"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.relix.adventure.alchemical_gold.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "relix:sacred_gold_chestplate"
+    },
+    "title": {
+      "translate": "advancements.relix.adventure.alchemical_gold.title"
+    }
+  },
+  "requirements": [
+    [
+      "sacred_gold_boots",
+      "sacred_gold_chestplate",
+      "sacred_gold_helmet",
+      "sacred_gold_leggings"
+    ]
+  ]
+}
