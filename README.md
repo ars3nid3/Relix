@@ -1,25 +1,10 @@
 
-Installation information
-=======
+# Relix
 
-This template repository can be directly cloned to get you started with a new
-mod. Simply create a new repository cloned from this one, by following the
-instructions provided by [GitHub](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
+Relix is a mod that aims to blow a fresh breeze of wind into the structures dotted around the Minecraft landscape. Each of the structures will integrate new features that feel MInecraft-like, while making them prime points-of-interest for adventurous players to discover.
 
-Once you have your clone, simply open the repository in the IDE of your choice. The usual recommendation for an IDE is either IntelliJ IDEA or Eclipse.
+## Act I - The Desert Temple
 
-If at any point you are missing libraries in your IDE, or you've run into problems you can
-run `gradlew --refresh-dependencies` to refresh the local cache. `gradlew clean` to reset everything 
-{this does not affect your code} and then start the process again.
+Scattered about the dry sands, these temples of old have seen a fair bit of neglect. Besides being used by speedrunners to get some easy loot on their hands, there hasn't been much of a reason to visit them anymore... until now! The deterioration of the interior has strewn about clumps of suspicious looking sand containing ancient fragments of a language lost to the sands of time.
 
-Mapping Names:
-============
-By default, the MDK is configured to use the official mapping names from Mojang for methods and fields 
-in the Minecraft codebase. These names are covered by a specific license. All modders should be aware of this
-license. For the latest license text, refer to the mapping file itself, or the reference copy here:
-https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
-
-Additional Resources: 
-==========
-Community Documentation: https://docs.neoforged.net/  
-NeoForged Discord: https://discord.neoforged.net/
+Analyze the fragments, translate the tales of old and prepare for those who hate being disturbed! This is your last warning...
