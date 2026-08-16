@@ -185,6 +185,7 @@ public class Relix {
     public void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
             Commands.literal("pharaohvisual")
+            .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.literal("on")
                     .executes(ctx -> {
                         ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -205,13 +206,35 @@ public class Relix {
                     })
                 )
         );
+        event.getDispatcher().register(
+            Commands.literal("reroll_pharaoh_summon")
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .executes(ctx -> {
+                    ServerLevel level = ctx.getSource().getServer().overworld();
+                    RelixWorldData data = level.getDataStorage()
+                        .computeIfAbsent(RelixWorldData.KEY);
+                    data.reroll(level);
+                    ctx.getSource().sendSuccess(
+                        () -> Component.literal("Rerolled pharaoh summon requirements"),
+                        true
+                    );
+                    return 1;
+                })
+        );
     }
 
     @SubscribeEvent
     public void onItemUseTick(LivingEntityUseItemEvent.Tick event) {
         LivingEntity livingEntity = event.getEntity();
         if (livingEntity.hasEffect(RelixEffects.TIME_DILATION)) {
-            event.setDuration(event.getDuration() + 1);
+            if (RelixAttachments.hasTimeDilationSlowUse(livingEntity)) {
+                RelixAttachments.setTimeDilationSlowUse(livingEntity, false);
+            } else {
+                event.setDuration(event.getDuration() + 1);
+                RelixAttachments.setTimeDilationSlowUse(livingEntity, true);
+            }
+        } else if (RelixAttachments.hasTimeDilationSlowUse(livingEntity)) {
+            RelixAttachments.setTimeDilationSlowUse(livingEntity, false);
         }
     }
 

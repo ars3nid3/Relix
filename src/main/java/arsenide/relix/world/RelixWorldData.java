@@ -24,21 +24,10 @@ public class RelixWorldData extends SavedData {
         ).apply(instance, RelixWorldData::new))
     );
 
-    private final List<SummonRequirement> pharaohConditions;
+    private List<SummonRequirement> pharaohConditions;
 
     public RelixWorldData(ServerLevel level) {
-        RandomSource random = RandomSource.create(level.getSeed());
-
-        List<SummonRequirement> pharaohConditions = List.of(
-            Util.getRandom(PharaohRequirementOptions.TIME_OF_DAY, random),
-            Util.getRandom(PharaohRequirementOptions.BIOME, random),
-            Util.getRandom(PharaohRequirementOptions.PEDESTAL, random),
-            Util.getRandom(PharaohRequirementOptions.OFFERING, random),
-            Util.getRandom(PharaohRequirementOptions.EQUIPMENT, random)
-        );
-        this.pharaohConditions = pharaohConditions;
-
-        this.setDirty();
+        this(rollPharaohConditions(RandomSource.create(level.getSeed())));
     }
 
     public RelixWorldData(
@@ -50,6 +39,21 @@ public class RelixWorldData extends SavedData {
 
     public List<SummonRequirement> pharaohConditions() {
         return pharaohConditions;
+    }
+
+    public void reroll(ServerLevel level) {
+        this.pharaohConditions = rollPharaohConditions(level.getRandom());
+        this.setDirty();
+    }
+
+    private static List<SummonRequirement> rollPharaohConditions(RandomSource random) {
+        return List.of(
+            Util.getRandom(PharaohRequirementOptions.TIME_OF_DAY, random),
+            Util.getRandom(PharaohRequirementOptions.BIOME, random),
+            Util.getRandom(PharaohRequirementOptions.PEDESTAL, random),
+            Util.getRandom(PharaohRequirementOptions.OFFERING, random),
+            Util.getRandom(PharaohRequirementOptions.EQUIPMENT, random)
+        );
     }
     
 }

@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import arsenide.relix.effects.RelixEffects;
 import arsenide.relix.items.RelixItems;
+import arsenide.relix.world.RelixAttachments;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -31,7 +32,14 @@ public class LivingEntityMixin {
             livingEntity instanceof Player player &&
             player.hasEffect(RelixEffects.TIME_DILATION)
         ) {
-            attackStrengthTicker--;
+            if (RelixAttachments.hasTimeDilationSlowAttack(livingEntity)) {
+                RelixAttachments.setTimeDilationSlowAttack(livingEntity, false);
+            } else {
+                attackStrengthTicker--;
+                RelixAttachments.setTimeDilationSlowAttack(livingEntity, true);
+            }
+        } else if (RelixAttachments.hasTimeDilationSlowAttack(livingEntity)) {
+            RelixAttachments.setTimeDilationSlowAttack(livingEntity, false);
         }
     }
 

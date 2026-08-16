@@ -150,7 +150,7 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
         // When spawning, always try to do nothing
         this.goalSelector.addGoal(0, new PharaohDoNothingGoal(this));
         this.goalSelector.addGoal(1, new PharaohChooseStateGoal(this));
-        this.goalSelector.addGoal(2, new RangedAttackGoal(this, 0.4F, 40, 8F) {
+        this.goalSelector.addGoal(2, new RangedAttackGoal(this, 0.4F, 70, 8F) {
             @Override
             public boolean canUse() {
                 if (getState() != PharaohState.DEFAULT) return false;
@@ -674,10 +674,6 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
             Items.IRON_AXE,
             Items.IRON_HOE
         );
-        List<Holder<Potion>> arrowPotionEffects = List.of(
-            Potions.LONG_WEAKNESS,
-            Potions.SLOWNESS
-        );
         if (random.nextBoolean() && !isRanged) {
             enchantAndEquipRandomItem(
                 summonedEntity, 
@@ -685,21 +681,10 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
                 weaponItems
             );
         } else if (isRanged) {
-            enchantAndEquipItem(
-                summonedEntity,
+            summonedEntity.setItemSlot(
                 EquipmentSlot.MAINHAND,
                 new ItemStack(Items.BOW)
             );
-            ItemStack arrows = new ItemStack(Items.TIPPED_ARROW);
-            arrows.set(
-                DataComponents.POTION_CONTENTS,
-                new PotionContents(
-                    arrowPotionEffects.get(
-                        random.nextInt(arrowPotionEffects.size())
-                    )
-                )
-            );
-            summonedEntity.setItemSlot(EquipmentSlot.OFFHAND, arrows);
         }
     }
 

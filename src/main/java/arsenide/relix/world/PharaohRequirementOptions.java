@@ -26,16 +26,16 @@ public final class PharaohRequirementOptions {
     );
 
     public static final List<SummonRequirement> OFFERING = List.of(
-        SummonRequirement.parse("item:golden_apple"),
+        SummonRequirement.parse("item:golden_apple|enchanted_golden_apple"),
         SummonRequirement.parse("item:rabbit_foot"),
-        SummonRequirement.parse("item:trial_key"),
+        SummonRequirement.parse("item:trial_key|ominous_trial_key"),
         SummonRequirement.parse("item:totem_of_undying")
     );
     
     public static final List<SummonRequirement> EQUIPMENT = List.of(
-        SummonRequirement.parse("head:skeleton_skull"),
+        SummonRequirement.parse("head:skeleton_skull|wither_skeleton_skull"),
         SummonRequirement.parse("head:carved_pumpkin"),
         SummonRequirement.parse("offhand:golden_hoe"),
-        SummonRequirement.parse("offhand:relix.hieroglyph_tablet")
+        SummonRequirement.parse("offhand:relix.hieroglyph_tablet|eye_armor_trim_smithing_template")
     );   
 }

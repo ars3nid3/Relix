@@ -34,8 +34,9 @@ public class DesertPyramidDecorator {
         // Get the center terracotta piece of the pyramid
         BlockPos centerPos = ((StructurePieceAccessor) piece).relix$getWorldPos(10, 0, 10);
 
-        int pileCount = random.nextInt(3) + 1;
-        boolean guaranteedTabletPlaced = false;
+        int pileCount = random.nextInt(3) + 5;
+        int numberGuaranteedTablets = random.nextInt(2) + 2;
+        int guaranteedTabletPlaced = 0;
 
         for (int pileNum = 0; pileNum < pileCount; pileNum++) {
             int tryCount = 0;
@@ -62,7 +63,7 @@ public class DesertPyramidDecorator {
                 continue;
             }
 
-            boolean guaranteeTablet = !guaranteedTabletPlaced;
+            boolean guaranteeTablet = guaranteedTabletPlaced < numberGuaranteedTablets;
             int numBlocksPlaced = placePile(
                 level,
                 random,
@@ -70,15 +71,8 @@ public class DesertPyramidDecorator {
                 guaranteeTablet
             );
             if (guaranteeTablet && numBlocksPlaced > 0) {
-                guaranteedTabletPlaced = true;
+                guaranteedTabletPlaced++;
             }
-            Relix.LOGGER.info(
-                "Placed pile with {} blocks at ({}, {}, {})",
-                numBlocksPlaced,
-                pileX,
-                foundY,
-                pileZ
-            );
         }
     }
 
