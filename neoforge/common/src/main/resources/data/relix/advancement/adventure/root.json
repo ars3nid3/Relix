@@ -1,0 +1,26 @@
+{
+  "criteria": {
+    "inv_change": {
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:block/sandstone_top",
+    "description": {
+      "translate": "advancements.relix.adventure.root.description"
+    },
+    "icon": {
+      "id": "relix:sacred_gemstone"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancements.relix.adventure.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "inv_change"
+    ]
+  ]
+}

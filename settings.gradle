@@ -11,4 +11,7 @@ plugins {
 
 rootProject.name = 'Relix'
 
+include ':neoforge:common'
 include ':neoforge:26.2'
+include ':neoforge:26.1'
+include ':neoforge:1.21'
