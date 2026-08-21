@@ -1,6 +1,0 @@
-ext {
-    minecraft_version = '26.1.2'
-    minecraft_version_range = '[26.1.2]'
-    neo_version = '26.1.2.95'
-    java_version = 25
-}
