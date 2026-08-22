@@ -1,10 +1,11 @@
 package arsenide.relix.entity.renderer.models;
 
+import org.joml.Vector3f;
+
 import arsenide.relix.Relix;
-import arsenide.relix.entity.renderer.state.PharaohRenderState;
-import net.minecraft.client.animation.KeyframeAnimation;
-import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.Model;
+import arsenide.relix.entity.PharaohEntity;
+import net.minecraft.client.animation.KeyframeAnimations;
+import net.minecraft.client.model.HierarchicalModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -13,53 +14,63 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.entity.animation.json.AnimationHolder;
 
-public class PharaohModel extends EntityModel<PharaohRenderState> {
+public class PharaohModel extends HierarchicalModel<PharaohEntity> {
+
+    private static final Vector3f ANIMATION_VECTOR_CACHE = new Vector3f();
 
     public static final ModelLayerLocation PHARAOH_LAYER = 
         new ModelLayerLocation(
-            Identifier.fromNamespaceAndPath(Relix.MODID, "pharaoh"),
+            ResourceLocation.fromNamespaceAndPath(Relix.MODID, "pharaoh"),
         "main"
         );
 
     public static final AnimationHolder IDLE_ANIMATION =
-        Model.getAnimation(Identifier.fromNamespaceAndPath(
+        getAnimation(ResourceLocation.fromNamespaceAndPath(
             Relix.MODID,
             "pharaoh/idle"
         )
     );
-    private final KeyframeAnimation idle;
     public static final AnimationHolder SPAWN_ANIMATION =
-        Model.getAnimation(Identifier.fromNamespaceAndPath(
+        getAnimation(ResourceLocation.fromNamespaceAndPath(
             Relix.MODID,
             "pharaoh/spawn"
         )
     );
-    private final KeyframeAnimation spawn;
     public static final AnimationHolder SUMMONING_UNDEAD_ANIMATION =
-        Model.getAnimation(Identifier.fromNamespaceAndPath(
+        getAnimation(ResourceLocation.fromNamespaceAndPath(
             Relix.MODID,
             "pharaoh/summon"
         )
     );
-    private final KeyframeAnimation summoningUndead;
     public static final AnimationHolder SPELLCASTING_ANIMATION =
-        Model.getAnimation(Identifier.fromNamespaceAndPath(
+        getAnimation(ResourceLocation.fromNamespaceAndPath(
             Relix.MODID,
             "pharaoh/cast_spell"
         )
     );
-    private final KeyframeAnimation spellcasting;
     public static final AnimationHolder SHOCKWAVE_ANIMATION =
-        Model.getAnimation(Identifier.fromNamespaceAndPath(
+        getAnimation(ResourceLocation.fromNamespaceAndPath(
             Relix.MODID,
             "pharaoh/shockwave"
         )
     );
-    private final KeyframeAnimation shockwave;
+
+    private void applyAnimation(
+        AnimationHolder animation,
+        int stateTick
+    ) {
+        KeyframeAnimations.animate(
+            this, 
+            animation.get(), 
+            stateTick * 50L, 
+            1.0F, 
+            ANIMATION_VECTOR_CACHE
+        );
+    }
 
     private final ModelPart root;
     private final ModelPart body;
@@ -84,7 +95,7 @@ public class PharaohModel extends EntityModel<PharaohRenderState> {
     private final ModelPart spellBookPage;
 
     public PharaohModel(ModelPart root) {
-        super(root);
+        super();
         this.root = root.getChild("root");
         this.leftLeg = this.root.getChild("leftLeg");
         this.rightLeg = this.root.getChild("rightLeg");
@@ -100,12 +111,6 @@ public class PharaohModel extends EntityModel<PharaohRenderState> {
         this.spellBookRight = this.spellBook.getChild("spellBookRight");
         this.spellBookLeft = this.spellBook.getChild("spellBookLeft");
         this.spellBookPage = this.spellBook.getChild("spellBookPage");
-
-        this.idle = IDLE_ANIMATION.get().bake(this.root);
-        this.spawn = SPAWN_ANIMATION.get().bake(this.root);
-        this.summoningUndead = SUMMONING_UNDEAD_ANIMATION.get().bake(this.root);
-        this.spellcasting = SPELLCASTING_ANIMATION.get().bake(this.root);
-        this.shockwave = SHOCKWAVE_ANIMATION.get().bake(this.root);
     }
 
     @SuppressWarnings("unused")
@@ -320,46 +325,56 @@ public class PharaohModel extends EntityModel<PharaohRenderState> {
         // rotation conventions???
         root.getAllParts().forEach(part -> {
             PartPose initial = part.getInitialPose();
-            float dx = part.x - initial.x();
-            part.x = initial.x() - dx;
+            float dx = part.x - initial.x;
+            part.x = initial.x - dx;
             part.xRot = -part.xRot;
             part.yRot = -part.yRot;
         });
     }
 
     @Override
-    public void setupAnim(PharaohRenderState state) {
+    public void setupAnim(
+        PharaohEntity entity,
+        float limbSwing,
+        float limbSwingAmount,
+        float ageInTicks,
+        float netHeadYaw,
+        float headPitch
+    ) {
         this.root.getAllParts().forEach(part -> part.resetPose());
-        switch (state.pharaohState) {
+        switch (entity.getState()) {
             case SPAWNING:
-                this.spawn.apply(state.pharaohStateTick * 50, 1.0F);
+                applyAnimation(SPAWN_ANIMATION, entity.getStateTick());
                 fixAnimationRotations(this.root);
                 // Rotate the head when looking
-                this.head.xRot = state.xRot * (float) (Math.PI / 180.0);
-                this.head.yRot = state.yRot * (float) (Math.PI / 180.0);  
+                this.head.xRot = headPitch * (float) (Math.PI / 180.0);
+                this.head.yRot = netHeadYaw * (float) (Math.PI / 180.0);  
                 break;
             case SUMMONING_UNDEAD:
-                this.summoningUndead.apply(state.pharaohStateTick * 50, 1.0F);
+                applyAnimation(SUMMONING_UNDEAD_ANIMATION, entity.getStateTick());
                 fixAnimationRotations(this.root);
                 break;
             case SPELLCASTING:
-                this.spellcasting.apply(state.pharaohStateTick * 50, 1.0F);
+                applyAnimation(SPELLCASTING_ANIMATION, entity.getStateTick());
                 fixAnimationRotations(this.root);
                 break;
             case SHOCKWAVE:
-                this.shockwave.apply(state.pharaohStateTick * 50, 1.0F);
+                applyAnimation(SHOCKWAVE_ANIMATION, entity.getStateTick());
                 fixAnimationRotations(this.root);
                 break;
             default:
-                this.idle.apply(state.pharaohStateTick * 50, 1.0F);
+                applyAnimation(IDLE_ANIMATION, entity.getStateTick());
                 fixAnimationRotations(this.root);
-                float animationPos = state.walkAnimationPos;
-                float animationSpeed = state.walkAnimationSpeed;
-                this.rightLeg.xRot = Mth.cos(animationPos * 0.6662F) * 1.4F * animationSpeed / state.speedValue;
-                this.leftLeg.xRot = Mth.cos(animationPos * 0.6662F + (float) Math.PI) * 1.4F * animationSpeed / state.speedValue;
+                this.rightLeg.xRot = Mth.cos(limbSwing * 0.6662F) * 1.4F * limbSwingAmount;
+                this.leftLeg.xRot = Mth.cos(limbSwing * 0.6662F + (float) Math.PI) * 1.4F * limbSwingAmount;
                 // Rotate the head when looking
-                this.head.xRot = state.xRot * (float) (Math.PI / 180.0);
-                this.head.yRot = state.yRot * (float) (Math.PI / 180.0);        
+                this.head.xRot = headPitch * (float) (Math.PI / 180.0);
+                this.head.yRot = netHeadYaw * (float) (Math.PI / 180.0);        
         }
+    }
+
+    @Override
+    public ModelPart root() {
+        return this.root;
     }
 }

@@ -4,26 +4,34 @@
     "used_on_ocelot": {
       "conditions": {
         "item": {
-          "items": [
-            "relix:pharaoh_headdress"
-          ]
+          "items": "relix:pharaoh_headdress"
         },
-        "entity": {
-          "minecraft:entity_type": "minecraft:ocelot"
-        }
+        "entity": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "type": "minecraft:ocelot"
+            }
+          }
+        ]
       },
       "trigger": "minecraft:player_interacted_with_entity"
     },
     "used_on_tamed_cat": {
       "conditions": {
         "item": {
-          "items": [
-            "relix:pharaoh_headdress"
-          ]
+          "items": "relix:pharaoh_headdress"
         },
-        "entity": {
-          "minecraft:entity_type": "minecraft:cat"
-        }
+        "entity": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "type": "minecraft:cat"
+            }
+          }
+        ]
       },
       "trigger": "minecraft:player_interacted_with_entity"
     }

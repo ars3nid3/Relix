@@ -17,9 +17,8 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
-import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
-
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 public class TabletTableMenu extends AbstractContainerMenu {
 
     private final ContainerLevelAccess access;
@@ -37,7 +36,7 @@ public class TabletTableMenu extends AbstractContainerMenu {
             containerId, 
             playerInv, 
             ContainerLevelAccess.NULL,
-            new ItemStacksResourceHandler(1),
+            new ItemStackHandler(1),
             new SimpleContainerData(TabletTableBlockEntity.CLUE_COUNT + 2),
             null
         );
@@ -49,21 +48,34 @@ public class TabletTableMenu extends AbstractContainerMenu {
         }
     }
 
+    private void addPlayerInventorySlots(Inventory playerInv, int left, int top) {
+        // Main inventory (slots 9-35)
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(playerInv, col + (row + 1) * 9, left + col * 18, top + row * 18));
+            }
+        }
+        // Hotbar (slots 0-8)
+        for (int col = 0; col < 9; col++) {
+            this.addSlot(new Slot(playerInv, col, left + col * 18, top + 58));
+        }
+    }
+
     // Server constructor
     public TabletTableMenu(
         int containerId, 
         Inventory playerInv, 
         ContainerLevelAccess access,
-        ItemStacksResourceHandler inventory,
+        ItemStackHandler inventory,
         ContainerData data,
         TabletTableBlockEntity blockEntity
     ) {
         super(RelixMenus.TABLET_TABLE_MENU.get(), containerId);
         this.access = access;
         // Tablet slot
-        this.addSlot(new ResourceHandlerSlot(inventory, inventory::set, 0, 15, 30));
+        this.addSlot(new SlotItemHandler(inventory, 0, 15, 30));
         // Player inventory slots
-        this.addStandardInventorySlots(playerInv, 8, 96);
+        this.addPlayerInventorySlots(playerInv, 8, 96);
 
         // Add data slots
         this.data = data;

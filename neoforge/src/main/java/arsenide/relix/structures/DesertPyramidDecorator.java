@@ -6,7 +6,7 @@ import arsenide.relix.Relix;
 import arsenide.relix.mixins.StructurePieceAccessor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
@@ -22,7 +22,7 @@ public class DesertPyramidDecorator {
 
     private static final ResourceKey<LootTable> HIEROGLYPH_TABLET_LOOT = ResourceKey.create(
         Registries.LOOT_TABLE,
-        Identifier.fromNamespaceAndPath(Relix.MODID, "archaeology/hieroglyph_tablet")
+        ResourceLocation.fromNamespaceAndPath(Relix.MODID, "archaeology/hieroglyph_tablet")
     );
 
     public static void addPiles(
@@ -135,7 +135,7 @@ public class DesertPyramidDecorator {
         WorldGenLevel level,
         BlockPos pos
     ) {
-        for (int y = pos.getY() - 1; y >= level.getMinY(); y--) {
+        for (int y = pos.getY() - 1; y >= level.getMinBuildHeight(); y--) {
             BlockPos evaluatedPos = new BlockPos(pos.getX(), y, pos.getZ());
             if (!level.getBlockState(evaluatedPos).is(Blocks.AIR)) {
                 return pos;

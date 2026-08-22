@@ -8,7 +8,7 @@
             "condition": "minecraft:entity_properties",
             "entity": "this",
             "predicate": {
-              "minecraft:entity_type": "relix:pharaoh_spawn_scene"
+              "type": "relix:pharaoh_spawn_scene"
             }
           }
         ]

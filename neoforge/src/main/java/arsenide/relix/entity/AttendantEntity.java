@@ -8,6 +8,7 @@ import arsenide.relix.items.RelixItems;
 import arsenide.relix.util.SpawnUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -20,8 +21,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 public class AttendantEntity extends Monster {
@@ -36,17 +35,21 @@ public class AttendantEntity extends Monster {
     private boolean isLinked = false;
 
     protected AttendantEntity(EntityType<? extends AttendantEntity> type, Level level) {
-        this(level, false, null);
+        super(type, level);
     }
 
     public AttendantEntity(Level level, boolean holdsJukebox, BlockPos altarPos) {
+        super(RelixEntities.ATTENDANT_ENTITY.get(), level);
         this.holdsJukebox = holdsJukebox;
         this.altarPos = altarPos;
         if (altarPos != null) {
             this.linkedPos = altarPos.above(10);
         }
+        // Re-register goals after setting the altar pos
+        this.goalSelector.removeAllGoals(g -> true);
+        this.targetSelector.removeAllGoals(g -> true);
+        this.registerGoals();
         // Set pos before calling super so that the goal registration works
-        super(RelixEntities.ATTENDANT_ENTITY.get(), level);
         assignAttendantTask();
     }
 
@@ -89,7 +92,7 @@ public class AttendantEntity extends Monster {
 
     @Override
     protected void playStepSound(BlockPos pos, BlockState blockState) {
-        this.playSound(SoundEvents.PARCHED_STEP, 0.15F, 1.0F);
+        this.playSound(SoundEvents.SKELETON_STEP, 0.15F, 1.0F);
     }
 
     public boolean isJukeboxAttendant() {
@@ -150,29 +153,27 @@ public class AttendantEntity extends Monster {
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
-        super.addAdditionalSaveData(output);
-        output.putInt("Lifetime", lifeTimeCounter);
-        output.putBoolean("HoldsJukebox", holdsJukebox);
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putInt("Lifetime", lifeTimeCounter);
+        tag.putBoolean("HoldsJukebox", holdsJukebox);
         if (altarPos != null) {
-            output.putIntArray("AltarPos", new int[] {
+            tag.putIntArray("AltarPos", new int[] {
                 altarPos.getX(),
                 altarPos.getY(),
                 altarPos.getZ()
             });
         }
-        output.putBoolean("IsLinked", isLinked);
+        tag.putBoolean("IsLinked", isLinked);
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
-        super.readAdditionalSaveData(input);
-        lifeTimeCounter = input.getIntOr("Lifetime", 0);
-        holdsJukebox = input.getBooleanOr("HoldsJukebox", false);
-        int[] altarPosArray = input.getIntArray("AltarPos").orElse(
-            new int[] {}
-        );
-        if (altarPosArray.length == 0) {
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        lifeTimeCounter = tag.getInt("Lifetime");
+        holdsJukebox = tag.getBoolean("HoldsJukebox");
+        int[] altarPosArray = tag.getIntArray("AltarPos");
+        if (altarPosArray.length != 3) {
             altarPos = null;
         } else {
             altarPos = new BlockPos(
@@ -182,6 +183,6 @@ public class AttendantEntity extends Monster {
             );
             linkedPos = altarPos.above(10);
         }
-        isLinked = input.getBooleanOr("IsLinked", false);
+        isLinked = tag.getBoolean("IsLinked");
     }
 }

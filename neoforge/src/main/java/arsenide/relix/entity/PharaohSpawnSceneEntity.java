@@ -11,19 +11,17 @@ import arsenide.relix.util.SpawnUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 public class PharaohSpawnSceneEntity extends Entity {
@@ -38,7 +36,7 @@ public class PharaohSpawnSceneEntity extends Entity {
     private UUID discAttendantUUID = null;
 
     public PharaohSpawnSceneEntity(EntityType<? extends PharaohSpawnSceneEntity> type, Level level) {
-        super(RelixEntities.PHARAOH_SPAWN_SCENE_ENTITY.get(), level);
+        super(type, level);
         this.pos = null;
     }
 
@@ -102,8 +100,7 @@ public class PharaohSpawnSceneEntity extends Entity {
 
     private void spawnPharaoh() {
         PharaohEntity pharaoh = RelixEntities.PHARAOH_ENTITY.get().create(
-            level(),
-            EntitySpawnReason.MOB_SUMMONED
+            level()
         );
         pharaoh.informJukebox(pos);
         pharaoh.setPos(Vec3.atCenterOf(pos).add(0, 10, 0));
@@ -139,15 +136,18 @@ public class PharaohSpawnSceneEntity extends Entity {
     }
 
     private void resolveAttendants() {
+        if (!(level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
         if (jukeboxAttendantUUID != null) {
-            Entity entity = level().getEntity(jukeboxAttendantUUID);
+            Entity entity = serverLevel.getEntity(jukeboxAttendantUUID);
             if (entity instanceof AttendantEntity attendantEntity) {
                 jukeboxAttendant = attendantEntity;
                 jukeboxAttendantUUID = null;
             }
         }
         if (discAttendantUUID != null) {
-            Entity entity = level().getEntity(discAttendantUUID);
+            Entity entity = serverLevel.getEntity(discAttendantUUID);
             if (entity instanceof AttendantEntity attendantEntity) {
                 discAttendant = attendantEntity;
                 discAttendantUUID = null;
@@ -201,15 +201,15 @@ public class PharaohSpawnSceneEntity extends Entity {
     }
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
+    public boolean hurt(DamageSource source, float damage) {
         return false;
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
-        tickCounter = input.getIntOr("ElapsedTicks", 0);
-        hasBossSpawned = input.getBooleanOr("HasBossSpawned", false);
-        int[] posCoords = input.getIntArray("AltarPos").orElse(new int[] {});
+    public void readAdditionalSaveData(CompoundTag tag) {
+        tickCounter = tag.getInt("ElapsedTicks");
+        hasBossSpawned = tag.getBoolean("HasBossSpawned");
+        int[] posCoords = tag.getIntArray("AltarPos");
         if (posCoords.length == 3) {
             pos = new BlockPos(
                 posCoords[0],
@@ -217,7 +217,7 @@ public class PharaohSpawnSceneEntity extends Entity {
                 posCoords[3]
             );
         }
-        String jukeboxAttendantUuidString = input.getStringOr("JukeboxAttendantID", "");
+        String jukeboxAttendantUuidString = tag.getString("JukeboxAttendantID");
         try {
             if (jukeboxAttendantUuidString.length() > 0) {
                 jukeboxAttendantUUID = UUID.fromString(jukeboxAttendantUuidString);
@@ -227,7 +227,7 @@ public class PharaohSpawnSceneEntity extends Entity {
                 "Pharaoh spawn scene was given invalid UUID format: " + jukeboxAttendantUuidString
             );
         }
-        String discAttendantUuidString = input.getStringOr("DiscAttendantID", "");
+        String discAttendantUuidString = tag.getString("DiscAttendantID");
         try {
             if (discAttendantUuidString.length() > 0) {
                 discAttendantUUID = UUID.fromString(discAttendantUuidString);
@@ -240,21 +240,21 @@ public class PharaohSpawnSceneEntity extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
-        output.putInt("ElapsedTicks", tickCounter);
-        output.putBoolean("HasBossSpawned", hasBossSpawned);
+    public void addAdditionalSaveData(CompoundTag tag) {
+        tag.putInt("ElapsedTicks", tickCounter);
+        tag.putBoolean("HasBossSpawned", hasBossSpawned);
         if (pos != null) {
-            output.putIntArray("AltarPos", new int[] {
+            tag.putIntArray("AltarPos", new int[] {
                 pos.getX(),
                 pos.getY(),
                 pos.getZ()
             });
         }
         if (jukeboxAttendant != null) {
-            output.putString("JukeboxAttendantID", jukeboxAttendant.getStringUUID());
+            tag.putString("JukeboxAttendantID", jukeboxAttendant.getStringUUID());
         }
         if (discAttendant != null) {
-            output.putString("DiscAttendantID", discAttendant.getStringUUID());
+            tag.putString("DiscAttendantID", discAttendant.getStringUUID());
         }
     }
 

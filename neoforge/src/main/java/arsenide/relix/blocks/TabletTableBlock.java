@@ -2,7 +2,7 @@ package arsenide.relix.blocks;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import com.mojang.serialization.MapCodec;
 
@@ -62,7 +62,7 @@ public class TabletTableBlock extends HorizontalDirectionalBlock implements Enti
         }
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof TabletTableBlockEntity tabletTableBlockEntity)) {
-            return InteractionResult.SUCCESS_SERVER;
+            return InteractionResult.SUCCESS;
         }
         serverPlayer.openMenu(
             state.getMenuProvider(level, pos),
@@ -74,7 +74,7 @@ public class TabletTableBlock extends HorizontalDirectionalBlock implements Enti
                 }
             }
         );
-        return InteractionResult.SUCCESS_SERVER;
+        return InteractionResult.SUCCESS;
     }
 
     @Override

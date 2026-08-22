@@ -3,21 +3,20 @@ package arsenide.relix.entity.renderer;
 import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
 import arsenide.relix.Relix;
 import arsenide.relix.entity.PharaohSpawnSceneEntity;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
-public class PharaohSpawnSceneEntityRenderer extends EntityRenderer<PharaohSpawnSceneEntity, EntityRenderState> {
+public class PharaohSpawnSceneEntityRenderer extends EntityRenderer<PharaohSpawnSceneEntity> {
 
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
         Relix.MODID,
         "textures/entity/pharaoh_spawn_scene.png"
     );
@@ -27,48 +26,46 @@ public class PharaohSpawnSceneEntityRenderer extends EntityRenderer<PharaohSpawn
     }
 
     @Override
-    public EntityRenderState createRenderState() {
-        return new EntityRenderState();
-    }
-
-    @Override
-    public void submit(
-        EntityRenderState state, 
-        PoseStack poseStack, 
-        SubmitNodeCollector submitNodeCollector,
-        CameraRenderState camera
+    public void render(
+        PharaohSpawnSceneEntity entity, 
+        float partialTick, 
+        float yaw, 
+        PoseStack poseStack,
+        MultiBufferSource bufferSource, 
+        int packedLight
     ) {
+
         poseStack.pushPose();
         // A bit above the ground plane
         poseStack.translate(0, 0.1, 0);
-        poseStack.mulPose(Axis.YP.rotationDegrees(state.ageInTicks));
-        submitNodeCollector.submitCustomGeometry(
-            poseStack,
-            RenderTypes.text(TEXTURE),
-            (pose, vertexConsumer) -> {
-                Matrix4f matrix = pose.pose();
-                float size = 1.0F;
-                vertexConsumer.addVertex(matrix, -size / 2, 0, -size / 2)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(0, 0)
-                    .setLight(state.lightCoords);
-                vertexConsumer.addVertex(matrix, -size / 2, 0, size / 2)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(0, 1)
-                    .setLight(state.lightCoords);
-                vertexConsumer.addVertex(matrix, size / 2, 0, size / 2)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(1, 1)
-                    .setLight(state.lightCoords);
-                vertexConsumer.addVertex(matrix, size / 2, 0, -size / 2)
-                    .setColor(255, 255, 255, 255)
-                    .setUv(1, 0)
-                    .setLight(state.lightCoords);
-            }
-        );
-
+        poseStack.mulPose(Axis.YP.rotationDegrees(entity.tickCount + partialTick));
+        Matrix4f matrix = poseStack.last().pose();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.text(TEXTURE));
+        float size = 1.0F;
+        float halfSize = size / 2.0F;
+        consumer.addVertex(matrix, -halfSize, 0.0F, -halfSize)
+            .setColor(255, 255, 255, 255)
+            .setUv(0.0F, 0.0F)
+            .setLight(packedLight);
+        consumer.addVertex(matrix, -halfSize, 0.0F, halfSize)
+            .setColor(255, 255, 255, 255)
+            .setUv(0.0F, 1.0F)
+            .setLight(packedLight);
+        consumer.addVertex(matrix, halfSize, 0.0F, halfSize)
+            .setColor(255, 255, 255, 255)
+            .setUv(1.0F, 1.0F)
+            .setLight(packedLight);
+        consumer.addVertex(matrix, halfSize, 0.0F, -halfSize)
+            .setColor(255, 255, 255, 255)
+            .setUv(1.0F, 0.0F)
+            .setLight(packedLight);
         poseStack.popPose();
-        super.submit(state, poseStack, submitNodeCollector, camera);
+        super.render(entity, partialTick, yaw, poseStack, bufferSource, packedLight);
+    }
+
+    @Override
+    public ResourceLocation getTextureLocation(PharaohSpawnSceneEntity p_114482_) {
+        return TEXTURE;
     }
     
     

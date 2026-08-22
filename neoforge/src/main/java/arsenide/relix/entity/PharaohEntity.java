@@ -8,9 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.jspecify.annotations.Nullable;
-
-import com.mojang.serialization.Codec;
+import javax.annotation.Nullable;
 
 import arsenide.relix.Relix;
 import arsenide.relix.effects.RelixEffects;
@@ -24,6 +22,10 @@ import arsenide.relix.util.SpawnUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -41,9 +43,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -64,9 +64,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.level.storage.ValueOutput.TypedOutputList;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.EventHooks;
@@ -111,19 +108,17 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
     private float summonedEntitiesMaxHealth = 1.0F;
 
     private final List<EntityType<? extends Monster>> summonableEntities = List.of(
-        EntityTypes.HUSK,
-        EntityTypes.PARCHED
+        EntityType.HUSK,
+        EntityType.SKELETON
     );
 
     private final ServerBossEvent bossBar = new ServerBossEvent(
-        Mth.createInsecureUUID(random),
         Component.translatable("entity.relix.pharaoh"),
         BossEvent.BossBarColor.PURPLE,
         BossEvent.BossBarOverlay.PROGRESS
     );
 
     private final ServerBossEvent summonedEntitiesBar = new ServerBossEvent(
-        Mth.createInsecureUUID(random),
         getSummonedEntitiesBarComponent(),
         BossEvent.BossBarColor.RED,
         BossEvent.BossBarOverlay.PROGRESS
@@ -178,8 +173,14 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
                 multiplier = 0.25F;
             }
             if (multiplier > 0.0F) {
-                MobEffectInstance reducedEffect = newEffect.withScaledDuration(
-                    multiplier
+                MobEffectInstance reducedEffect = new MobEffectInstance(
+                    newEffect.getEffect(),
+                    (int) (newEffect.getDuration() * multiplier),
+                    newEffect.getAmplifier(),
+                    newEffect.isAmbient(),
+                    newEffect.isVisible(),
+                    newEffect.showIcon(),
+                    null
                 );
                 return super.addEffect(reducedEffect, source);
             }
@@ -233,7 +234,9 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
         Iterator<UUID> iterator = summonedEntitiesUUIDs.iterator();
         while (iterator.hasNext()) {
             UUID uuid = iterator.next();
-            Entity entity = level().getEntity(uuid);
+            Entity entity = level() instanceof ServerLevel serverLevel ?
+            serverLevel.getEntity(uuid) :
+            null;
             if (
                 entity instanceof Monster summonedEntity
             ) {
@@ -390,7 +393,7 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
     }
 
     @Override
-    public boolean causeFallDamage(double fallDistance, float damageModifier, DamageSource damageSource) {
+    public boolean causeFallDamage(float fallDistance, float damageModifier, DamageSource damageSource) {
         return false;
     }
 
@@ -481,8 +484,7 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
                 1.0 * knockbackMultiplier, 
                 knockback.z * knockbackMultiplier
             );
-            entity.hurtServer(
-                (ServerLevel) level(), 
+            entity.hurt( 
                 damageSources().mobAttack(this), 
                 5.0F
             );
@@ -707,10 +709,7 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
             if (spawnPos == null) {
                 continue;
             }
-            Monster summonedEntity = chosenEntity.create(
-                level(),
-                EntitySpawnReason.MOB_SUMMONED
-            );
+            Monster summonedEntity = chosenEntity.create(level());
             summonedEntity.setCustomName(
                 Component.translatable("entity.relix.pharaoh.summoned_entity")
                 .withStyle(ChatFormatting.GOLD)
@@ -768,7 +767,7 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
     @Override
     public void checkDespawn() {
         if (EventHooks.checkMobDespawn(this)) return;
-        if (level().getDifficulty() == Difficulty.PEACEFUL && !this.getType().isAllowedInPeaceful()) {
+        if (level().getDifficulty() == Difficulty.PEACEFUL && shouldDespawnInPeaceful()) {
             discard();
         } else {
             noActionTime = 0;
@@ -792,15 +791,12 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
-        super.addAdditionalSaveData(output);
-        output.putInt("CurrentState", getState().ordinal());
-        output.putInt("StateTick", getStateTick());
-        output.putInt("SpecialAttackCooldown", getSpecialAttackCooldown());
-        TypedOutputList<String> summonedOutput = output.list(
-            "SummonedEntities",
-            Codec.STRING
-        );
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putInt("CurrentState", getState().ordinal());
+        tag.putInt("StateTick", getStateTick());
+        tag.putInt("SpecialAttackCooldown", getSpecialAttackCooldown());
+        ListTag summonedList = new ListTag();
         Set<UUID> uniqueSummonedEntityUUIDs = new HashSet<>();
         for (Monster summonedEntity : summonedEntities) {
             uniqueSummonedEntityUUIDs.add(summonedEntity.getUUID());
@@ -809,29 +805,26 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
             uniqueSummonedEntityUUIDs.add(summonedEntityUUID);
         }
         for (UUID uniqueSummonedEntityUUID : uniqueSummonedEntityUUIDs) {
-            summonedOutput.add(uniqueSummonedEntityUUID.toString());
+            summonedList.add(StringTag.valueOf(uniqueSummonedEntityUUID.toString()));
         }
+        tag.put("SummonedEntities", summonedList);
             
-        output.putFloat(
+        tag.putFloat(
             "SummonedEntitiesMaxHealth", 
             summonedEntitiesMaxHealth
         );
-        TypedOutputList<String> knockedbackOutput = output.list(
-            "KnockedbackEntities",
-            Codec.STRING
-        );
+        ListTag knockedbackList = new ListTag();
         for (UUID knockedbackEntityUUID : knockedbackEntitiesUUIDs) {
-            knockedbackOutput.add(knockedbackEntityUUID.toString());
+            knockedbackList.add(StringTag.valueOf(knockedbackEntityUUID.toString()));
         }
-        TypedOutputList<String> cursedOutput = output.list(
-            "CursedEntities",
-            Codec.STRING
-        );
+        tag.put("KnockedbackEntities", knockedbackList);
+        ListTag cursedList = new ListTag();
         for (UUID cursedEntityUUID : cursedEntitiesUUIDs) {
-            cursedOutput.add(cursedEntityUUID.toString());
+            cursedList.add(StringTag.valueOf(cursedEntityUUID.toString()));
         }
+        tag.put("CursedEntities", cursedList);
         if (jukeboxPos != null) {
-            output.putIntArray(
+            tag.putIntArray(
                 "JukeboxPos",
                 new int[] {
                     jukeboxPos.getX(),
@@ -843,68 +836,62 @@ public class PharaohEntity extends Monster implements RangedAttackMob {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
-        super.readAdditionalSaveData(input);
-        int stateValue = input.getIntOr("CurrentState", PharaohState.SPAWNING.ordinal());
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        int stateValue = tag.getInt("CurrentState");
         setState(PharaohState.values()[stateValue]);
-        setStateTick(input.getIntOr("StateTick", 0));
-        setSpecialAttackCooldown(input.getIntOr("SpecialAttackCooldown", 0));
+        setStateTick(tag.getInt("StateTick"));
+        setSpecialAttackCooldown(tag.getInt("SpecialAttackCooldown"));
         bossBar.setProgress(getHealth() / getMaxHealth());
 
         summonedEntities.clear();
         summonedEntitiesUUIDs.clear();
-        ValueInput.TypedInputList<String> summonedInput = input.listOrEmpty(
-            "SummonedEntities",
-            Codec.STRING
-        );
-        for (String summonedEntityUUID : summonedInput) {
+        ListTag summonedList = tag.getList("SummonedEntities", Tag.TAG_STRING);
+        for (int i = 0 ; i < summonedList.size() ; i++) {
             try {
-                summonedEntitiesUUIDs.add(UUID.fromString(summonedEntityUUID));
+                summonedEntitiesUUIDs.add(UUID.fromString(summonedList.getString(i)));
             } catch (IllegalArgumentException e) {
                 Relix.LOGGER.error(
                     "Invalid UUID for summoned entity: {}", 
-                    summonedEntityUUID
+                    summonedList.getString(i)
                 );
                 continue;
             }
         }
-        summonedEntitiesMaxHealth = input.getFloatOr(
-            "SummonedEntitiesMaxHealth", 
-            1.0F
-        );
+        summonedEntitiesMaxHealth = tag.getFloat("SummonedEntitiesMaxHealth");
         knockedbackEntitiesUUIDs.clear();
-        ValueInput.TypedInputList<String> knockedbackInput = input.listOrEmpty(
+        ListTag knockedbackList = tag.getList(
             "KnockedbackEntities",
-            Codec.STRING
+            Tag.TAG_STRING
         );
-        for (String knockedbackEntityUUID : knockedbackInput) {
+        for (int i = 0; i < knockedbackList.size() ; i++) {
             try {
-                knockedbackEntitiesUUIDs.add(UUID.fromString(knockedbackEntityUUID));
+                knockedbackEntitiesUUIDs.add(UUID.fromString(knockedbackList.getString(i)));
             } catch (IllegalArgumentException e) {
                 Relix.LOGGER.error(
                     "Invalid UUID for knockedback entity: {}", 
-                    knockedbackEntityUUID
+                    knockedbackList.getString(i)
                 );
                 continue;
             }
         }
         cursedEntitiesUUIDs.clear();
-        ValueInput.TypedInputList<String> cursedInput = input.listOrEmpty(
+        ListTag cursedList = tag.getList(
             "CursedEntities",
-            Codec.STRING
+            Tag.TAG_STRING
         );
-        for (String cursedEntityUUID : cursedInput) {
+        for (int i = 0; i < cursedList.size(); i++) {
             try {
-                cursedEntitiesUUIDs.add(UUID.fromString(cursedEntityUUID));
+                cursedEntitiesUUIDs.add(UUID.fromString(cursedList.getString(i)));
             } catch (IllegalArgumentException e) {
                 Relix.LOGGER.error(
                     "Invalid UUID for cursed entity: {}", 
-                    cursedEntityUUID
+                    cursedList.getString(i)
                 );
                 continue;
             }
         }
-        int[] jukeboxCoords = input.getIntArray("JukeboxPos").orElse(new int[] {});
+        int[] jukeboxCoords = tag.getIntArray("JukeboxPos");
         if (jukeboxCoords.length == 3) {
             jukeboxPos = new BlockPos(
                 jukeboxCoords[0],

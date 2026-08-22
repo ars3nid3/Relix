@@ -1,23 +1,23 @@
 package arsenide.relix.menu.components;
 
 import arsenide.relix.Relix;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public class TabletButton extends Button {
 
-    private static final Identifier BUTTON_DISABLED =
-        Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation BUTTON_DISABLED =
+        ResourceLocation.fromNamespaceAndPath(
             Relix.MODID, "textures/gui/sprites/button_disabled.png"
     );
-    private static final Identifier BUTTON_ENABLED =
-        Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation BUTTON_ENABLED =
+        ResourceLocation.fromNamespaceAndPath(
             Relix.MODID, "textures/gui/sprites/button.png"
     );
-    private static final Identifier BUTTON_HOVERED =
-        Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation BUTTON_HOVERED =
+        ResourceLocation.fromNamespaceAndPath(
             Relix.MODID, "textures/gui/sprites/button_highlight.png"
     );
 
@@ -33,7 +33,7 @@ public class TabletButton extends Button {
         super(x, y, width, height, message, onPress, createNarration);
     }
 
-    private Identifier getTexture() {
+    private ResourceLocation getTexture() {
         if (!active) {
             return BUTTON_DISABLED;
         }
@@ -44,17 +44,13 @@ public class TabletButton extends Button {
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.blit(
+    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.blitSprite(
             getTexture(),
             getX(),
             getY(),
-            getX() + width,
-            getY() + height,
-            0f,
-            1f,
-            0f,
-            1f
+            width,
+            height
         );
     }
     

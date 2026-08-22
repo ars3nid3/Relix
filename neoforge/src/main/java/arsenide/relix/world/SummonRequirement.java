@@ -10,7 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -82,7 +82,7 @@ public record SummonRequirement (
         );
 
     public static final Codec<SummonRequirement> CODEC =
-        CURRENT_CODEC.withAlternative(LEGACY_CODEC);
+        Codec.withAlternative(CURRENT_CODEC, LEGACY_CODEC);
 
     public Component getClueText() {
         String valuesString = String.join("|", values);
@@ -121,7 +121,7 @@ public record SummonRequirement (
 
     private boolean checkDayPhase(ServerLevel level, String[] values) {
         // Don't like this magic number, but cannot figure out how to get the duration rn
-        long dayTime = level.getOverworldClockTime() % 24000;
+        long dayTime = level.getDayTime() % 24000;
         boolean isMet = false;
         for (String value : values) {
             isMet |= switch (value) {
@@ -151,7 +151,7 @@ public record SummonRequirement (
 
     private boolean checkInteractedBlock(ServerLevel level, BlockPos pos, String[] values) {
         BlockState state = level.getBlockState(pos);
-        Identifier id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         boolean isMet = false;
         for (String value : values) {
             String namespaceValue = String.join(":", value.split("\\."));
@@ -168,7 +168,7 @@ public record SummonRequirement (
     }
 
     private boolean checkInteractedItem(Player player, String[] values) {
-        Identifier id = BuiltInRegistries.ITEM.getKey(
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(
             player.getMainHandItem().getItem()
         );
         boolean isMet = false;
@@ -187,7 +187,7 @@ public record SummonRequirement (
     }
 
     private boolean checkHeldItem(Player player, String[] values, EquipmentSlot slot) {
-        Identifier id = BuiltInRegistries.ITEM.getKey(
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(
             player.getItemBySlot(slot).getItem()
         );
         boolean isMet = false;

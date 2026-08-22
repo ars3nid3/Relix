@@ -1,9 +1,9 @@
 {
     "type": "minecraft:crafting_shaped",
     "key": {
-      "#": "minecraft:gold_ingot",
-      "C": "minecraft:sandstone",
-      "S": "relix:sacred_gold_upgrade_smithing_template"
+      "#": { "item": "minecraft:gold_ingot" },
+      "C": { "item": "minecraft:sandstone" },
+      "S": { "item": "relix:sacred_gold_upgrade_smithing_template" }
     },
     "pattern": [
       "#S#",

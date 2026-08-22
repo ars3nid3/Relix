@@ -1,12 +1,12 @@
 {
     "type": "minecraft:crafting_shaped",
     "key": {
-      "#": "minecraft:sandstone",
-      "S": "minecraft:gold_ingot",
+      "#": { "item": "minecraft:sandstone" },
+      "S": { "item": "minecraft:gold_ingot" },
       "C": [
-        "minecraft:netherite_upgrade_smithing_template",
-        "minecraft:dune_armor_trim_smithing_template",
-        "minecraft:eye_armor_trim_smithing_template"
+        { "item": "minecraft:netherite_upgrade_smithing_template" },
+        { "item": "minecraft:dune_armor_trim_smithing_template" },
+        { "item": "minecraft:eye_armor_trim_smithing_template" }
       ]
     },
     "pattern": [

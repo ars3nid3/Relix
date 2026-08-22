@@ -27,7 +27,7 @@ public class RelixAttachments {
             () -> AttachmentType.builder(
                 () -> false
             )
-            .serialize(Codec.BOOL.fieldOf("time_dilation_slow_consume"))
+            .serialize(Codec.BOOL.fieldOf("time_dilation_slow_consume").codec())
             .sync(StreamCodec.of(
                 ByteBufCodecs.BOOL,
                 ByteBufCodecs.BOOL
@@ -42,7 +42,7 @@ public class RelixAttachments {
             () -> AttachmentType.builder(
                 () -> false
             )
-            .serialize(Codec.BOOL.fieldOf("time_diltation_slow_use"))
+            .serialize(Codec.BOOL.fieldOf("time_diltation_slow_use").codec())
             .sync(StreamCodec.of(
                 ByteBufCodecs.BOOL,
                 ByteBufCodecs.BOOL
@@ -57,7 +57,7 @@ public class RelixAttachments {
             () -> AttachmentType.builder(
                 () -> false
             )
-            .serialize(Codec.BOOL.fieldOf("time_dilation_slow_attack"))
+            .serialize(Codec.BOOL.fieldOf("time_dilation_slow_attack").codec())
             .sync(StreamCodec.of(
                 ByteBufCodecs.BOOL,
                 ByteBufCodecs.BOOL
@@ -72,7 +72,7 @@ public class RelixAttachments {
             () -> AttachmentType.builder(
                 () -> false
             )
-            .serialize(Codec.BOOL.fieldOf("has_headdress"))
+            .serialize(Codec.BOOL.fieldOf("has_headdress").codec())
             .sync(StreamCodec.of(
                 ByteBufCodecs.BOOL,
                 ByteBufCodecs.BOOL

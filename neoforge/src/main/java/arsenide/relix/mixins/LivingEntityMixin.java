@@ -61,9 +61,25 @@ public class LivingEntityMixin {
         ) {
             MobEffectCategory effectCategory = effectInstance.getEffect().value().getCategory();
             if (effectCategory == MobEffectCategory.HARMFUL) {
-                return effectInstance.withScaledDuration(0.25F);
+                return new MobEffectInstance(
+                    effectInstance.getEffect(),
+                    (int) (effectInstance.getDuration() * 0.25F),
+                    effectInstance.getAmplifier(),
+                    effectInstance.isAmbient(),
+                    effectInstance.isVisible(),
+                    effectInstance.showIcon(),
+                    null
+                );
             } else {
-                return effectInstance.withScaledDuration(0.75F);
+                return new MobEffectInstance(
+                    effectInstance.getEffect(),
+                    (int) (effectInstance.getDuration() * 0.75F),
+                    effectInstance.getAmplifier(),
+                    effectInstance.isAmbient(),
+                    effectInstance.isVisible(),
+                    effectInstance.showIcon(),
+                    null
+                );
             }
         }
         return effectInstance;

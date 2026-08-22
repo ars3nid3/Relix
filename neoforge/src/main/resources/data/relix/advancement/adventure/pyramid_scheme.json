@@ -8,7 +8,7 @@
             "minecraft:filled_map"
           ],
           "predicates": {
-            "minecraft:custom_data": {
+            "custom_data": {
               "relix_treasure_map": true
             }
           }

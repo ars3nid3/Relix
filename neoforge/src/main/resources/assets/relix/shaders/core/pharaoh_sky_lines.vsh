@@ -1,14 +1,14 @@
-#version 330
+#version 150
 
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:globals.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+#moj_import <fog.glsl>
+#moj_import <globals.glsl>
+#moj_import <dynamictransforms.glsl>
+#moj_import <projection.glsl>
 
 in vec3 Position;
 in vec4 Color;
 in vec3 Normal;
-in float LineWidth;
+const float LineWidth = 2.0;
 
 out float sphericalVertexDistance;
 out float cylindricalVertexDistance;

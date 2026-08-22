@@ -1,246 +1,153 @@
 package arsenide.relix.client.render;
 
-import java.util.Optional;
-import java.util.OptionalDouble;
-
-import org.joml.Matrix4fc;
-
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.RenderPass;
+import org.joml.Matrix4f;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.state.level.LevelRenderState;
-import net.minecraft.client.renderer.state.level.SkyRenderState;
-import net.minecraft.util.ARGB;
-import net.neoforged.neoforge.client.CustomSkyboxRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
+public class PharaohSkyRenderer {
 
-public class PharaohSkyRenderer implements CustomSkyboxRenderer {
+    private static void assemblePyramid(BufferBuilder builder, Matrix4f pose) {
+        float size = 40.0F;
+        float height = 40.0F;
 
-        private void assemblePyramid(BufferBuilder builder) {
-            float size = 40.0F;
-            float height = 40.0F;
+        // Vertex assembly
+        // Front wall
+        builder.addVertex(pose, 0, height, 0)
+            .setUv(0.5F, 0)
+            .setColor(0xFFFFD080);
+        builder.addVertex(pose, size, -size, -size)
+            .setUv(1, 1)                
+            .setColor(0xFFC08040);
+        builder.addVertex(pose, -size, -size, -size)
+            .setUv(0, 1)
+            .setColor(0xFFC08040);
 
-            // Vertex assembly
-            // Front wall
-            builder.addVertex(0, height, 0)
-                .setUv(0.5F, 0)
-                .setColor(0xFFFFD080);
-            builder.addVertex(size, -size, -size)
-                .setUv(1, 1)                
-                .setColor(0xFFC08040);
-            builder.addVertex(-size, -size, -size)
-                .setUv(0, 1)
-                .setColor(0xFFC08040);
+        // Right wall
+        builder.addVertex(pose, 0, height, 0)
+            .setUv(0.5F, 0)
+            .setColor(0xFFFFD080);
+        builder.addVertex(pose, size, -size, size)
+            .setUv(1, 1)
+            .setColor(0xFFD09050);
+        builder.addVertex(pose, size, -size, -size)
+            .setUv(0, 1)
+            .setColor(0xFFD09050);
 
-            // Right wall
-            builder.addVertex(0, height, 0)
-                .setUv(0.5F, 0)
-                .setColor(0xFFFFD080);
-            builder.addVertex(size, -size, size)
-                .setUv(1, 1)
-                .setColor(0xFFD09050);
-            builder.addVertex(size, -size, -size)
-                .setUv(0, 1)
-                .setColor(0xFFD09050);
+        // Back wall
+        builder.addVertex(pose, 0, height, 0)
+            .setUv(0.5F, 0)
+            .setColor(0xFFFFD080);
+        builder.addVertex(pose, -size, -size, size)
+            .setUv(1, 1)
+            .setColor(0xFFB07030);
+        builder.addVertex(pose, size, -size, size)
+            .setUv(0, 1)
+            .setColor(0xFFB07030);
 
-            // Back wall
-            builder.addVertex(0, height, 0)
-                .setUv(0.5F, 0)
-                .setColor(0xFFFFD080);
-            builder.addVertex(-size, -size, size)
-                .setUv(1, 1)
-                .setColor(0xFFB07030);
-            builder.addVertex(size, -size, size)
-                .setUv(0, 1)
-                .setColor(0xFFB07030);
+        // Left wall
+        builder.addVertex(pose, 0, height, 0)
+            .setUv(0.5F, 0)
+            .setColor(0xFFFFD080);
+        builder.addVertex(pose, -size, -size, -size)
+            .setUv(1, 1)
+            .setColor(0xFFE0A050);
+        builder.addVertex(pose, -size, -size, size)
+            .setUv(0, 1)
+            .setColor(0xFFE0A050);
+    }
 
-            // Left wall
-            builder.addVertex(0, height, 0)
-                .setUv(0.5F, 0)
-                .setColor(0xFFFFD080);
-            builder.addVertex(-size, -size, -size)
-                .setUv(1, 1)
-                .setColor(0xFFE0A050);
-            builder.addVertex(-size, -size, size)
-                .setUv(0, 1)
-                .setColor(0xFFE0A050);
+    private static void assemblePyramidEdges(BufferBuilder builder, Matrix4f pose) {
+        float size = 40.0F;
+        float height = 40.0F;
+        int color = 0xFFCCA666;
+
+        float[][] edges = {
+            {0, height, 0, size, -size, -size},
+            {0, height, 0, -size, -size, -size},
+            {0, height, 0, size, -size, size},
+            {0, height, 0, -size, -size, size},
+            {size, -size, -size, -size, -size, -size},
+            {-size, -size, -size, -size, -size, size},
+            {-size, -size, size, size, -size, size},
+            {size, -size, size, size, -size, -size}
+        };
+
+        for (float[] e : edges) {
+            float dx = e[3] - e[0];
+            float dy = e[4] - e[1];
+            float dz = e[5] - e[2];
+            float length = (float)Math.sqrt(dx * dx + dy * dy + dz * dz);
+            float nx = dx / length;
+            float ny = dy / length;
+            float nz = dz / length;
+
+            builder.addVertex(pose, e[0], e[1], e[2])
+                .setColor(color)
+                .setNormal(nx, ny, nz);
+            builder.addVertex(pose, e[3], e[4], e[5])
+                .setColor(color)
+                .setNormal(nx, ny, nz);
         }
+    }
 
-        private void assemblePyramidEdges(BufferBuilder builder, float lineWidth) {
-            float size = 40.0F;
-            float height = 40.0F;
-            int color = 0xFFCCA666;
+    public static void render(
+        Matrix4f modelViewMatrix,
+        Matrix4f projectionMatrix,
+        float partialTick
+    ) {
+        PoseStack poseStack = new PoseStack();
+        poseStack.mulPose(modelViewMatrix);
 
-            float[][] edges = {
-                {0, height, 0, size, -size, -size},
-                {0, height, 0, -size, -size, -size},
-                {0, height, 0, size, -size, size},
-                {0, height, 0, -size, -size, size},
-                {size, -size, -size, -size, -size, -size},
-                {-size, -size, -size, -size, -size, size},
-                {-size, -size, size, size, -size, size},
-                {size, -size, size, size, -size, -size}
-            };
-
-            for (float[] e : edges) {
-                float dx = e[3] - e[0];
-                float dy = e[4] - e[1];
-                float dz = e[5] - e[2];
-                float length = (float)Math.sqrt(dx * dx + dy * dy + dz * dz);
-                float nx = dx / length;
-                float ny = dy / length;
-                float nz = dz / length;
-
-                builder.addVertex(e[0], e[1], e[2])
-                    .setColor(color)
-                    .setNormal(nx, ny, nz)
-                    .setLineWidth(lineWidth);
-                builder.addVertex(e[3], e[4], e[5])
-                    .setColor(color)
-                    .setNormal(nx, ny, nz)
-                    .setLineWidth(lineWidth);
-            }
-        }
-
-        @Override
-        public boolean renderSky(
-            LevelRenderState levelRenderState, 
-            SkyRenderState skyRenderState,
-            Matrix4fc modelViewMatrix, 
-            Runnable setupFog
-        ) {
-            // setupFog.run();
-            int skyColor = skyRenderState.skyColor;
-
-            // Get required info from current render target
-            var renderTarget = Minecraft.getInstance().gameRenderer.mainRenderTarget();
-            GpuTextureView colorTexture = renderTarget.getColorTextureView();
-            GpuTextureView depthTextureView = renderTarget.getDepthTextureView();
-
-            // Build a buffer to hold exactly 12 vertices
-            ByteBufferBuilder byteBufferBuilder = ByteBufferBuilder.exactlySized(
-                DefaultVertexFormat.POSITION_TEX_COLOR.getVertexSize() * 12
+        Matrix4f pose = poseStack.last().pose();
+        Minecraft mc = Minecraft.getInstance();
+        Tesselator tesselator = Tesselator.getInstance();
+        ShaderInstance skyShader = RelixShaders.pharaohSky;
+        if (skyShader != null) {
+            RenderSystem.depthMask(false);
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(() -> skyShader);
+            skyShader.setDefaultUniforms(
+                Mode.TRIANGLES, 
+                pose, 
+                projectionMatrix, 
+                mc.getWindow()
             );
-
-            // Here we specify the buffer contains vertices that automatically assemble into triangles
-            // And that they only require position and color
-            BufferBuilder buffer = new BufferBuilder(
-                byteBufferBuilder,
-                PrimitiveTopology.TRIANGLES,
+            BufferBuilder builder = tesselator.begin(
+                Mode.TRIANGLES,
                 DefaultVertexFormat.POSITION_TEX_COLOR
             );
-            assemblePyramid(buffer);
-            // Build vertices into a mesh (opr throw an error)
-            MeshData mesh = buffer.buildOrThrow();
-            
-            // Pass the instructions of the mesh to the GPU
-            GpuBuffer gpuBuffer = RenderSystem.getDevice().createBuffer(
-                () -> "pyramid sky", 
-                GpuBuffer.USAGE_VERTEX, 
-                mesh.vertexBuffer()
-            );
-
-            
-            RenderPass pass = RenderSystem.getDevice()
-                .createCommandEncoder()
-                .createRenderPass(
-                    () -> "pyramid sky",
-                    colorTexture,
-                    Optional.empty(),
-                    depthTextureView,
-                    OptionalDouble.empty()
-                );
-
-            // Defines the constraints of the rendering pipeline (aka which vertex and fragment shader, expected uniforms, vertexbinding) 
-            pass.setPipeline(RelixRenderPipelines.PHARAOH_SKY);
-
-            // Binds default uniforms (required by most pipelines)
-            RenderSystem.bindDefaultUniforms(pass);
-
-            // Binds dynamic transforms (required by sky pipeline, provides matrix and color)
-            GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
-                RenderSystem.getModelViewMatrixCopy(),
-                ARGB.vector4fFromARGB32(skyColor)
-            );
-            pass.setUniform("DynamicTransforms", dynamicTransforms);
-
-            // Bind the vertex buffer to the correct index
-            pass.setVertexBuffer(0, gpuBuffer.slice());
-
-            // Perform the render
-            pass.draw(mesh.drawState().vertexCount(), 1, 0, 0);
-
-            pass.close();
-
-            gpuBuffer.close();
-            mesh.close();
-            byteBufferBuilder.close();
-
-            // Render edges of the pyramid (LINES duplicates each vertex, so 16 logical -> 32 buffer verts)
-            ByteBufferBuilder lineByteBuffer = ByteBufferBuilder.exactlySized(
-                DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH.getVertexSize() * 32
-            );
-
-            BufferBuilder lineBuilder = new BufferBuilder(
-                lineByteBuffer,
-                PrimitiveTopology.LINES,
-                DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH
-            );
-
-            float lineWidth = Minecraft.getInstance().gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth;
-            assemblePyramidEdges(lineBuilder, lineWidth);
-            
-            MeshData lineMesh = lineBuilder.buildOrThrow();
-            
-            GpuBuffer lineGpuBuffer = RenderSystem.getDevice().createBuffer(
-                () -> "pyramid edges",
-                GpuBuffer.USAGE_VERTEX,
-                lineMesh.vertexBuffer()
-            );
-
-            RenderPass linePass = RenderSystem.getDevice()
-            .createCommandEncoder()
-            .createRenderPass(
-                () -> "pyramid edges",
-                colorTexture,
-                Optional.empty(),
-                depthTextureView,
-                OptionalDouble.empty()
-            );
-        
-            linePass.setPipeline(RelixRenderPipelines.PHARAOH_SKY_LINES);
-            
-            RenderSystem.bindDefaultUniforms(linePass);
-            
-            GpuBufferSlice lineTransforms =
-                RenderSystem.getDynamicUniforms().writeTransform(
-                    RenderSystem.getModelViewMatrixCopy(),
-                    ARGB.vector4fFromARGB32(skyColor)
-                );
-            
-            linePass.setUniform("DynamicTransforms", lineTransforms);
-            
-            linePass.setVertexBuffer(0, lineGpuBuffer.slice());
-
-            int indexCount = lineMesh.drawState().indexCount();
-            var sequentialIndices = RenderSystem.getSequentialBuffer(PrimitiveTopology.LINES);
-            linePass.setIndexBuffer(sequentialIndices.getBuffer(indexCount), sequentialIndices.type());
-            linePass.drawIndexed(indexCount, 1, 0, 0, 0);
-            
-            linePass.close();
-
-            lineGpuBuffer.close();
-            lineMesh.close();
-            lineByteBuffer.close();
-            
-            // Signal to not render anything else of the sky
-            return true;
+            assemblePyramid(builder, pose);
+            BufferUploader.drawWithShader(builder.buildOrThrow());
+            RenderSystem.depthMask(true);
+            RenderSystem.disableBlend();
         }
+        ShaderInstance lineShader = RelixShaders.pharaohSkyLines;
+        if (lineShader != null) {
+            RenderSystem.depthMask(false);
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShader(() -> lineShader);
+            lineShader.setDefaultUniforms(
+                Mode.LINES,
+                pose,
+                projectionMatrix,
+                mc.getWindow()
+            );
+            BufferBuilder lineBuilder = tesselator.begin(
+                Mode.LINES,
+                DefaultVertexFormat.POSITION_COLOR_NORMAL
+            );
+            assemblePyramidEdges(lineBuilder, pose);
+            BufferUploader.drawWithShader(lineBuilder.buildOrThrow());
+            RenderSystem.depthMask(true);
+            RenderSystem.disableBlend();
+        }
+    }
 }

@@ -5,10 +5,10 @@ import java.util.Locale;
 import arsenide.relix.Relix;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
 public class TabletDisplayWidget implements Renderable {
@@ -21,8 +21,8 @@ public class TabletDisplayWidget implements Renderable {
     private boolean uncovered;
     private Component clueText;
 
-    private static final Identifier HIEROGLYPH_ATLAS = 
-        Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation HIEROGLYPH_ATLAS = 
+        ResourceLocation.fromNamespaceAndPath(
             Relix.MODID, 
             "textures/gui/atlas/hieroglyphs.png");
     private static final int hieroglyphWidth = 8;
@@ -51,7 +51,7 @@ public class TabletDisplayWidget implements Renderable {
         this.uncovered = uncovered;
     }
 
-    private void renderUncovered(GuiGraphicsExtractor graphics) {
+    private void renderUncovered(GuiGraphics graphics) {
         graphics.fill(
             x,
             y,
@@ -68,7 +68,7 @@ public class TabletDisplayWidget implements Renderable {
         int textWidth = font.width(uppercaseClueText);
         int textHeight = font.lineHeight;
 
-        graphics.text(
+        graphics.drawString(
             font, 
             uppercaseClueText, 
             x + (width / 2) - (textWidth / 2), 
@@ -78,7 +78,7 @@ public class TabletDisplayWidget implements Renderable {
         );
     }
 
-    private void renderCovered(GuiGraphicsExtractor graphics) {
+    private void renderCovered(GuiGraphics graphics) {
         int numTiles = this.width / (hieroglyphWidth + 1);
         int paddingX = (this.width % (numTiles * (hieroglyphWidth + 1))) / 2;
         int numRows = this.height / (hieroglyphHeight + 1);
@@ -92,11 +92,6 @@ public class TabletDisplayWidget implements Renderable {
                 // Calculate the position of the hieroglyph in the atlas
                 int atlasX = (hieroglyphIndex % (atlasTextureWidth / hieroglyphWidth)) * hieroglyphWidth;
                 int atlasY = (hieroglyphIndex / (atlasTextureWidth / hieroglyphWidth)) * hieroglyphHeight;
-                float relativeAtlasX = (float) atlasX / atlasTextureWidth;
-                float relativeAtlasY = (float) atlasY / atlasTextureHeight;
-                float relativeAtlasX2 = (float) (atlasX + hieroglyphWidth) / atlasTextureWidth;
-                float relativeAtlasY2 = (float) (atlasY + hieroglyphHeight) / atlasTextureHeight;
-
                 // Calculate the position of the hieroglyph in the widget
                 int hieroglyphX = paddingX + x + (col * (hieroglyphWidth + 1)) + (this.width % hieroglyphWidth) / 2;
                 int hieroglyphY = paddingY + y + (row * (hieroglyphHeight + 1)) + (this.height % hieroglyphHeight) / 2;
@@ -104,19 +99,19 @@ public class TabletDisplayWidget implements Renderable {
                     HIEROGLYPH_ATLAS, 
                     hieroglyphX, 
                     hieroglyphY, 
-                    hieroglyphX + hieroglyphWidth, 
-                    hieroglyphY + hieroglyphHeight, 
-                    relativeAtlasX,  
-                    relativeAtlasX2,
-                    relativeAtlasY, 
-                    relativeAtlasY2
+                    atlasX,
+                    atlasY, 
+                    hieroglyphWidth,  
+                    hieroglyphHeight,
+                    atlasTextureWidth, 
+                    atlasTextureHeight
                 );
             }
         }
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float a) {
         if (uncovered) {
             renderUncovered(graphics);
         } else {

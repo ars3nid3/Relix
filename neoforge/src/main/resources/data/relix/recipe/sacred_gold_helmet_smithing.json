@@ -1,9 +1,9 @@
 {
     "type": "minecraft:smithing_transform",
-    "addition": "relix:sacred_gemstone",
-    "base": "minecraft:golden_helmet",
+    "addition": { "item": "relix:sacred_gemstone" },
+    "base": { "item": "minecraft:golden_helmet" },
     "result": {
         "id": "relix:sacred_gold_helmet"
     },
-    "template": "relix:sacred_gold_upgrade_smithing_template"
+    "template": {"item": "relix:sacred_gold_upgrade_smithing_template" }
 }

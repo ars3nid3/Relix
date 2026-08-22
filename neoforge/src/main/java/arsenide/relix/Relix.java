@@ -12,6 +12,7 @@ import arsenide.relix.entity.PharaohEntity;
 import arsenide.relix.entity.PharaohSpawnSceneEntity;
 import arsenide.relix.entity.RelixEntities;
 import arsenide.relix.items.RelixItems;
+import arsenide.relix.items.trades.DesertPyramidMapTrade;
 import arsenide.relix.menu.RelixMenus;
 import arsenide.relix.networking.PharaohVisualPayload;
 import arsenide.relix.sounds.RelixSounds;
@@ -19,8 +20,7 @@ import arsenide.relix.world.RelixAttachments;
 import arsenide.relix.world.RelixMapDecorationTypes;
 import arsenide.relix.world.RelixWorldData;
 import arsenide.relix.world.SummonRequirement;
-import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.triggers.CriteriaTriggers;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -33,8 +33,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.feline.Cat;
-import net.minecraft.world.entity.animal.feline.Ocelot;
+import net.minecraft.world.entity.animal.Cat;
+import net.minecraft.world.entity.animal.Ocelot;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
@@ -46,9 +47,10 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddAttributeTooltipsEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
@@ -57,6 +59,7 @@ import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Applicable.Resu
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.village.VillagerTradesEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // Mod entrypoint, name must match modid in TOML
@@ -132,7 +135,17 @@ public class Relix {
             event.getLevel() instanceof ServerLevel level &&
             level.dimension() == (Level.OVERWORLD)
         ) {
-            level.getDataStorage().computeIfAbsent(RelixWorldData.KEY);
+            RelixWorldData data = level.getDataStorage().computeIfAbsent(
+                RelixWorldData.factory(),
+                RelixWorldData.FILE_ID
+            );
+            if (data == null) {
+                data = new RelixWorldData(level);
+                level.getDataStorage().set(
+                    RelixWorldData.FILE_ID,
+                    data
+                );
+            }
         }
     }
 
@@ -152,7 +165,10 @@ public class Relix {
         Player player = event.getEntity();
 
         // Get the world data for the level, which contains summon conditions
-        RelixWorldData data = level.getDataStorage().computeIfAbsent(RelixWorldData.KEY);
+        RelixWorldData data = level.getDataStorage().computeIfAbsent(
+            RelixWorldData.factory(), 
+            RelixWorldData.FILE_ID
+        );
         List<SummonRequirement> pharaohRequirements = data.pharaohConditions();
 
         // Check if we meet all summon conditions
@@ -182,10 +198,19 @@ public class Relix {
     }
 
     @SubscribeEvent
+    public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            RelixBlocks.TABLET_TABLE_ENTITY.get(),
+            (be, side) -> be.getInventory()
+        );
+    }
+
+    @SubscribeEvent
     public void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
             Commands.literal("pharaohvisual")
-            .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+            .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.literal("on")
                     .executes(ctx -> {
                         ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -208,11 +233,21 @@ public class Relix {
         );
         event.getDispatcher().register(
             Commands.literal("reroll_pharaoh_summon")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .executes(ctx -> {
                     ServerLevel level = ctx.getSource().getServer().overworld();
                     RelixWorldData data = level.getDataStorage()
-                        .computeIfAbsent(RelixWorldData.KEY);
+                        .computeIfAbsent(
+                            RelixWorldData.factory(),
+                            RelixWorldData.FILE_ID
+                        );
+                    if (data == null) {
+                        data = new RelixWorldData(level);
+                        level.getDataStorage().set(
+                            RelixWorldData.FILE_ID,
+                            data
+                        );
+                    }
                     data.reroll(level);
                     ctx.getSource().sendSuccess(
                         () -> Component.literal("Rerolled pharaoh summon requirements"),
@@ -253,27 +288,6 @@ public class Relix {
                 event.setResult(Result.DO_NOT_APPLY);
             }
         }
-    }
-
-    @SubscribeEvent
-    public void onAttributeTooltips(AddAttributeTooltipsEvent event) {
-        if (!event.shouldShow()) return;
-
-        ItemStack stack = event.getStack();
-        if (
-            !stack.is(RelixItems.SACRED_GOLD_HELMET.get()) &&
-            !stack.is(RelixItems.SACRED_GOLD_CHESTPLATE.get()) &&
-            !stack.is(RelixItems.SACRED_GOLD_LEGGINGS.get()) &&
-            !stack.is(RelixItems.SACRED_GOLD_BOOTS.get())
-        ) {
-            return;
-        }
-
-        event.addTooltipLines(
-            Component.translatable(
-                "item.relix.sacred_gold_armor.potion_resistance"
-            ).withStyle(ChatFormatting.BLUE)
-        );
     }
 
     @SubscribeEvent
@@ -320,15 +334,15 @@ public class Relix {
         } else if (stack.canPerformAction(ItemAbilities.SHEARS_HARVEST)) {
             if (!RelixAttachments.hasHeaddress(livingEntity)) return;
             RelixAttachments.setHasHeaddress(livingEntity, false);
-            livingEntity.drop(new ItemStack(
+            livingEntity.spawnAtLocation(new ItemStack(
                 RelixItems.PHARAOH_HEADDRESS.get(),
                 1
-            ), true, false);
+            ));
             event.getEntity().swing(event.getHand());
             event.getLevel().playSound(
                 null,
                 event.getEntity().blockPosition(),
-                SoundEvents.SHEARS_SNIP,
+                SoundEvents.SHEEP_SHEAR,
                 SoundSource.PLAYERS,
                 1.0F,
                 1.0F
@@ -336,5 +350,11 @@ public class Relix {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
         }
+    }
+
+    @SubscribeEvent
+    public void registerTrades(VillagerTradesEvent event) {
+        if (event.getType() != VillagerProfession.CARTOGRAPHER) return;
+        event.getTrades().get(2).add(new DesertPyramidMapTrade());
     }
 }

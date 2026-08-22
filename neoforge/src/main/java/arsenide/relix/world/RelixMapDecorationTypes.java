@@ -2,7 +2,7 @@ package arsenide.relix.world;
 
 import arsenide.relix.Relix;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import net.neoforged.bus.api.IEventBus;
@@ -18,7 +18,7 @@ public class RelixMapDecorationTypes {
     MAP_DECORATION_TYPES.register(
         "desert_pyramid",
         () -> new MapDecorationType(
-            Identifier.fromNamespaceAndPath(Relix.MODID, "desert_pyramid"),
+            ResourceLocation.fromNamespaceAndPath(Relix.MODID, "desert_pyramid"),
             true, 
             MapColor.COLOR_LIGHT_GRAY.col,
             true,

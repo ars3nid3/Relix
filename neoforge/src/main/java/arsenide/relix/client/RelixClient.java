@@ -1,11 +1,12 @@
 package arsenide.relix.client;
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+
 import arsenide.relix.Relix;
 import arsenide.relix.client.camera.ScreenShake;
-import arsenide.relix.client.render.BossCloudRenderer;
 import arsenide.relix.client.render.PharaohDarkenRenderer;
 import arsenide.relix.client.render.PharaohSkyRenderer;
-import arsenide.relix.client.render.RelixRenderPipelines;
+import arsenide.relix.client.render.RelixShaders;
 import arsenide.relix.client.render.SandstormRenderer;
 import arsenide.relix.entity.RelixEntities;
 import arsenide.relix.entity.renderer.AttendantEntityRenderer;
@@ -14,30 +15,32 @@ import arsenide.relix.entity.renderer.PharaohEntityRenderer;
 import arsenide.relix.entity.renderer.PharaohSpawnSceneEntityRenderer;
 import arsenide.relix.entity.renderer.layers.PharaohHeaddressLayer;
 import arsenide.relix.entity.renderer.models.PharaohModel;
+import arsenide.relix.items.RelixItems;
 import arsenide.relix.menu.RelixMenus;
 import arsenide.relix.menu.TabletTableScreen;
-import arsenide.relix.world.RelixAttachments;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.model.geom.EntityModelSet;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.entity.CatRenderer;
 import net.minecraft.client.renderer.entity.OcelotRenderer;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.context.ContextKey;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.AddAttributeTooltipsEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterCustomEnvironmentEffectRendererEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.client.renderstate.RegisterRenderStateModifiersEvent;
-
 // This class will not load on dedicated servers. Accessing client side code from here is safe.
 @Mod(value = Relix.MODID, dist = Dist.CLIENT)
 // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -46,25 +49,52 @@ public class RelixClient {
 
     public static final PharaohSkyRenderer PHARAOH_SKY = new PharaohSkyRenderer();
 
-    public static final BossCloudRenderer BOSS_CLOUD = new BossCloudRenderer();
-
-    public static final ContextKey<Boolean> HAS_HEADDRESS = new ContextKey<>(
-        Identifier.fromNamespaceAndPath(
-            Relix.MODID,
-            "has_headdress"
-        )
-    );
-
     public RelixClient(ModContainer container) {
         // Allows NeoForge to create a config screen for this mod's configs.
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-
-        RelixRenderPipelines.PHARAOH_SKY.getLocation();
     }
 
-    
+    @SubscribeEvent
+    public static void onRegisterShaders(RegisterShadersEvent event) {
+        try {
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(Relix.MODID, "darken_overlay"),
+                    DefaultVertexFormat.BLIT_SCREEN
+                ),
+                shader -> RelixShaders.darkenOverlay = shader
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(Relix.MODID, "sandstorm"),
+                    DefaultVertexFormat.BLIT_SCREEN
+                ),
+                shader -> RelixShaders.sandstorm = shader
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(Relix.MODID, "pharaoh_sky"),
+                    DefaultVertexFormat.POSITION_TEX_COLOR
+                ),
+                shader -> RelixShaders.pharaohSky = shader
+            );
+            event.registerShader(
+                new ShaderInstance(
+                    event.getResourceProvider(),
+                    ResourceLocation.fromNamespaceAndPath(Relix.MODID, "pharaoh_sky_lines"),
+                    DefaultVertexFormat.POSITION_COLOR_NORMAL
+                ),
+                shader -> RelixShaders.pharaohSkyLines = shader
+            );
+        } catch (Exception e) {
+            Relix.LOGGER.error("Failed to register shaders", e);
+        }
+    }
 
     @SubscribeEvent
     public static void onRegisterScreens(RegisterMenuScreensEvent event) {
@@ -87,14 +117,6 @@ public class RelixClient {
         event.registerLayerDefinition(
             PharaohHeaddressLayer.CAT_HEADDRESS,
             PharaohHeaddressLayer::createCatHeaddressLayer
-        );
-        event.registerLayerDefinition(
-            PharaohHeaddressLayer.FELINE_BABY_HEADDRESS,
-            PharaohHeaddressLayer::createFelineBabyHeaddressLayer
-        );
-        event.registerLayerDefinition(
-            PharaohHeaddressLayer.CAT_BABY_HEADDRESS,
-            PharaohHeaddressLayer::createCatBabyHeaddressLayer
         );
     }
 
@@ -119,24 +141,10 @@ public class RelixClient {
     }
 
     @SubscribeEvent
-    public static void registerRenderers(RegisterCustomEnvironmentEffectRendererEvent event) {
-        event.registerSkyboxRenderer(
-            Identifier.fromNamespaceAndPath(Relix.MODID, "pharaoh_sky"),
-            PHARAOH_SKY
-        );
-        event.registerCloudRenderer(
-            Identifier.fromNamespaceAndPath(
-                Relix.MODID,
-                "boss_cloud"
-            ),
-            BOSS_CLOUD
-        );
-    }
-
-    @SubscribeEvent
-    public static void onRenderLevelAfterSky(RenderLevelStageEvent.AfterLevel event) {
+    public static void onRenderLevelAfterSky(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
         PharaohDarkenRenderer.render();
-        SandstormRenderer.render(event.getModelViewMatrix());
+        SandstormRenderer.render(event.getModelViewMatrix(), event.getProjectionMatrix());
     }
 
     @SubscribeEvent
@@ -165,25 +173,34 @@ public class RelixClient {
     }
 
     @SubscribeEvent
-    public static void registerRenderStateModifiers(RegisterRenderStateModifiersEvent event) {
-        event.registerEntityModifier(
-            CatRenderer.class,
-            (cat, state) -> state.setRenderData(HAS_HEADDRESS, RelixAttachments.hasHeaddress(cat))
-        );
-        event.registerEntityModifier(
-            OcelotRenderer.class,
-            (ocelot, state) -> state.setRenderData(HAS_HEADDRESS, RelixAttachments.hasHeaddress(ocelot))
-        );
+    public static void addLayers(EntityRenderersEvent.AddLayers event) {
+        EntityModelSet models = event.getEntityModels();
+        if (event.getRenderer(EntityType.CAT) instanceof CatRenderer cat) {
+            cat.addLayer(new PharaohHeaddressLayer<>(cat, models, true));
+        }
+        if (event.getRenderer(EntityType.OCELOT) instanceof OcelotRenderer ocelot) {
+            ocelot.addLayer(new PharaohHeaddressLayer<>(ocelot, models, false));
+        }
     }
 
     @SubscribeEvent
-    public static void addLayers(EntityRenderersEvent.AddLayers event) {
-        EntityModelSet models = event.getEntityModels();
-        if (event.getRenderer(EntityTypes.CAT) instanceof CatRenderer cat) {
-            cat.addLayer(new PharaohHeaddressLayer<>(cat, models));
+    public void onAttributeTooltips(AddAttributeTooltipsEvent event) {
+        if (!event.shouldShow()) return;
+
+        ItemStack stack = event.getStack();
+        if (
+            !stack.is(RelixItems.SACRED_GOLD_HELMET.get()) &&
+            !stack.is(RelixItems.SACRED_GOLD_CHESTPLATE.get()) &&
+            !stack.is(RelixItems.SACRED_GOLD_LEGGINGS.get()) &&
+            !stack.is(RelixItems.SACRED_GOLD_BOOTS.get())
+        ) {
+            return;
         }
-        if (event.getRenderer(EntityTypes.OCELOT) instanceof OcelotRenderer ocelot) {
-            ocelot.addLayer(new PharaohHeaddressLayer<>(ocelot, models));
-        }
+
+        event.addTooltipLines(
+            Component.translatable(
+                "item.relix.sacred_gold_armor.potion_resistance"
+            ).withStyle(ChatFormatting.BLUE)
+        );
     }
 }

@@ -2,21 +2,18 @@ package arsenide.relix.entity.renderer;
 
 import arsenide.relix.Relix;
 import arsenide.relix.entity.PharaohEntity;
-import arsenide.relix.entity.ai.PharaohState;
 import arsenide.relix.entity.renderer.layers.InvulnerabilityLayer;
 import arsenide.relix.entity.renderer.models.PharaohModel;
-import arsenide.relix.entity.renderer.state.PharaohRenderState;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public class PharaohEntityRenderer extends LivingEntityRenderer<
-    PharaohEntity, 
-    PharaohRenderState, 
+    PharaohEntity,  
     PharaohModel
 > {
-    private static final Identifier PHARAOH_LOCATION = 
-    Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation PHARAOH_LOCATION = 
+    ResourceLocation.fromNamespaceAndPath(
         Relix.MODID,
         "textures/entity/pharaoh.png"
     );
@@ -39,25 +36,7 @@ public class PharaohEntityRenderer extends LivingEntityRenderer<
     }
 
     @Override
-    public Identifier getTextureLocation(PharaohRenderState state) {
+    public ResourceLocation getTextureLocation(PharaohEntity entity) {
         return PHARAOH_LOCATION;
-    }
-
-    @Override
-    public void extractRenderState(
-        PharaohEntity entity, 
-        PharaohRenderState state, 
-        float partialTicks
-    ) {
-        super.extractRenderState(entity, state, partialTicks);
-
-        state.isInvulnerable = entity.getState() == PharaohState.SPAWNING;
-        state.pharaohStateTick = entity.getStateTick();
-        state.pharaohState = entity.getState();
-    }
-
-    @Override
-    public PharaohRenderState createRenderState() {
-        return new PharaohRenderState();
     }
 }

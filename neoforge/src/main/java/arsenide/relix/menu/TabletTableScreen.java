@@ -5,15 +5,15 @@ import arsenide.relix.Relix;
 import arsenide.relix.blocks.entity.TabletTableBlockEntity;
 import arsenide.relix.menu.components.TabletButton;
 import arsenide.relix.menu.components.TabletDisplayWidget;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 public class TabletTableScreen extends AbstractContainerScreen<TabletTableMenu> {
     
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
         Relix.MODID, "textures/gui/container/tablet_table.png"
     );
 
@@ -21,12 +21,14 @@ public class TabletTableScreen extends AbstractContainerScreen<TabletTableMenu> 
     private ArrayList<TabletDisplayWidget> tabletDisplayWidgets = new ArrayList<>();
 
     public TabletTableScreen(TabletTableMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, 176, 178);
+        super(menu, inventory, title);
     }
 
     @Override
     protected void init() {
         super.init();
+        this.width = 176;
+        this.height = 178;
         tabletButton = new TabletButton(
             leftPos + 14,
             topPos + 51,
@@ -65,22 +67,18 @@ public class TabletTableScreen extends AbstractContainerScreen<TabletTableMenu> 
     }
 
     @Override
-    public void extractBackground(
-        GuiGraphicsExtractor graphics, 
+    public void renderBg(
+        GuiGraphics graphics,
+        float partialTick, 
         int mouseX, 
-        int mouseY, 
-        float partialTick
+        int mouseY
     ) {
-        graphics.blit(
+        graphics.blitSprite(
             TEXTURE,
             leftPos,
             topPos,
-            leftPos + imageWidth,
-            topPos + imageHeight,
-            0.0F,
-            imageWidth / 256.0F,
-            0.0F,
-            imageHeight / 256.0F
+            imageWidth,
+            imageHeight
         );
     }
 

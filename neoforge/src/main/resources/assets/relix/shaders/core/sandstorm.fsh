@@ -1,12 +1,15 @@
-#version 330
-
-#moj_import <minecraft:globals.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+#version 150
 
 out vec4 fragColor;
 
 uniform sampler2D DepthSampler;
+
+uniform mat4 ProjMat;
+uniform mat4 ModelViewMat;
+uniform vec2 ScreenSize;
+uniform float GameTime;
+uniform vec3 CameraPos;
+uniform float Intensity;
 
 // Generate simple hash noise
 float hash(vec3 p)
@@ -97,7 +100,7 @@ void main()
     // the same as transposing it.
     vec3 worldRay = normalize(transpose(mat3(ModelViewMat)) * view.xyz);
 
-    vec3 cameraWorldPos = vec3(CameraBlockPos) - CameraOffset;
+    vec3 cameraWorldPos = CameraPos;
     float radius = 200.0;
     float angle = 0.1 * t;
 

@@ -7,8 +7,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.skeleton.Parched;
-import net.minecraft.world.entity.monster.zombie.Husk;
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.entity.monster.Husk;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.Level;
@@ -28,7 +28,7 @@ public class PharaohBoltEntity extends Projectile {
     private LivingEntity target;
 
     public PharaohBoltEntity(EntityType<? extends PharaohBoltEntity> type, Level level) {
-        super(RelixEntities.PHARAOH_BOLT_ENTITY.get(), level);
+        super(type, level);
     }
 
     public PharaohBoltEntity(Level level, LivingEntity owner, LivingEntity target) {
@@ -65,7 +65,7 @@ public class PharaohBoltEntity extends Projectile {
         setPos(getX() + motion.x, getY() + motion.y, getZ() + motion.z);
 
         if (!level().isClientSide()) {
-            applyEffectsFromBlocks();
+            checkInsideBlocks();
             if (hitResult != null && hitResult.getType() != HitResult.Type.MISS) {
                 onHit(hitResult);
             }
@@ -119,7 +119,7 @@ public class PharaohBoltEntity extends Projectile {
     @Override
     protected void onHitEntity(EntityHitResult hitResult) {
         super.onHitEntity(hitResult);
-        if (!(level() instanceof ServerLevel serverLevel)) {
+        if (!(level() instanceof ServerLevel)) {
             return;
         }
 
@@ -127,12 +127,11 @@ public class PharaohBoltEntity extends Projectile {
         if (hit == getOwner()) {
             return;
         }
-        if (hit instanceof Parched || hit instanceof Husk) {
+        if (hit instanceof Skeleton || hit instanceof Husk) {
             return;
         }
         if (hit instanceof LivingEntity livingEntity) {
-            livingEntity.hurtServer(
-                serverLevel,
+            livingEntity.hurt(
                 damageSources().mobProjectile(
                     this,
                     (LivingEntity) getOwner()
@@ -148,7 +147,7 @@ public class PharaohBoltEntity extends Projectile {
         if (!super.canHitEntity(entity)) {
             return false;
         }
-        return !(entity instanceof Parched || entity instanceof Husk);
+        return !(entity instanceof Skeleton || entity instanceof Husk);
     }
 
     @Override

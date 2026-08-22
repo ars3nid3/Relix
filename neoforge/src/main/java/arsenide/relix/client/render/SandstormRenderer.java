@@ -1,68 +1,77 @@
 package arsenide.relix.client.render;
 
-import java.util.Optional;
-import java.util.OptionalDouble;
-
 import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
-
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuSampler;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat.Mode;
 
 import arsenide.relix.client.PharaohVisualController;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.ARGB;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.world.phys.Vec3;
 
 public class SandstormRenderer {
     
-    public static void render(Matrix4fc modelViewMatrix) {
-        if (PharaohVisualController.getSandStormIntensity() <= 0.0F) {
+    public static void render(Matrix4f modelViewMatrix, Matrix4f projectionMatrix) {
+        float intensity = PharaohVisualController.getSandStormIntensity();
+        if (intensity <= 0.0F) {
             return;
         }
 
-        var target = Minecraft.getInstance().gameRenderer.mainRenderTarget();
+        ShaderInstance shader = RelixShaders.sandstorm;
+        if (shader == null) return;
 
-        GpuTextureView depthTexture = target.getDepthTextureView();
-
-        GpuSampler sampler = RenderSystem.getDevice().createSampler(
-            AddressMode.CLAMP_TO_EDGE,
-            AddressMode.CLAMP_TO_EDGE,
-            FilterMode.NEAREST,
-            FilterMode.NEAREST,
-            1,
-            OptionalDouble.empty()
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget target = mc.getMainRenderTarget();
+        RenderSystem.assertOnRenderThread();
+        GlStateManager._disableDepthTest();
+        GlStateManager._depthMask(false);
+        GlStateManager._enableBlend();
+        GlStateManager._blendFuncSeparate(
+            GlStateManager.SourceFactor.SRC_ALPHA.value,
+            GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA.value,
+            GlStateManager.SourceFactor.ONE.value,
+            GlStateManager.DestFactor.ZERO.value
         );
+        target.bindWrite(false);
 
-        RenderPass pass = RenderSystem.getDevice()
-            .createCommandEncoder()
-            .createRenderPass(
-                () -> "sandstorm",
-                target.getColorTextureView(),
-                Optional.empty(),
-                depthTexture,
-                OptionalDouble.empty()
+        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+        if (shader.getUniform("CameraPos") != null) {
+            shader.getUniform("CameraPos").set(
+                (float) cam.x,
+                (float) cam.y,
+                (float) cam.z
             );
+        }
+        if (shader.getUniform("Intensity") != null) {
+            shader.getUniform("Intensity").set(intensity);
+        }
 
-        pass.setPipeline(RelixRenderPipelines.SANDSTORM);
-
-        pass.bindTexture("DepthSampler", depthTexture, sampler);
-
-        RenderSystem.bindDefaultUniforms(pass);
-
-        GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms().writeTransform(
-            new Matrix4f(modelViewMatrix),
-            ARGB.vector4fFromARGB32(0xFFFFFFFF)
+        shader.setSampler("DepthSampler", target.getDepthTextureId());
+        shader.setDefaultUniforms(
+            Mode.QUADS,
+            modelViewMatrix,
+            projectionMatrix,
+            mc.getWindow()
         );
-        pass.setUniform("DynamicTransforms", dynamicTransforms);
+        shader.apply();
 
-        pass.draw(3, 1, 0, 0);
-
-        pass.close();
+        BufferBuilder builder = RenderSystem.renderThreadTesselator().begin(
+            Mode.QUADS,
+            DefaultVertexFormat.BLIT_SCREEN
+        );
+        builder.addVertex(0.0F, 0.0F, 0.0F);
+        builder.addVertex(1.0F, 0.0F, 0.0F);
+        builder.addVertex(1.0F, 1.0F, 0.0F);
+        builder.addVertex(0.0F, 1.0F, 0.0F);
+        BufferUploader.draw(builder.buildOrThrow());
+        shader.clear();
+        GlStateManager._depthMask(true);
+        GlStateManager._disableBlend();
         
     }
 }

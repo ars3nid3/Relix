@@ -1,8 +1,8 @@
-#version 330
+#version 150
 
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:globals.glsl>
+#moj_import <fog.glsl>
+#moj_import <dynamictransforms.glsl>
+#moj_import <globals.glsl>
 
 in vec4 vertexColor;
 in vec3 worldPosition;

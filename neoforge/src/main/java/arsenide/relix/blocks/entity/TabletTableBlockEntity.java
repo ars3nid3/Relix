@@ -2,7 +2,7 @@ package arsenide.relix.blocks.entity;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
+import javax.annotation.Nullable;
 
 import arsenide.relix.blocks.RelixBlocks;
 import arsenide.relix.blocks.TabletTableBlock;
@@ -12,6 +12,9 @@ import arsenide.relix.menu.data.TabletTableData;
 import arsenide.relix.world.RelixWorldData;
 import arsenide.relix.world.SummonRequirement;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -26,12 +29,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.neoforged.neoforge.transfer.ResourceHandler;
-import net.neoforged.neoforge.transfer.item.ItemResource;
-import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
-
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 public class TabletTableBlockEntity extends BlockEntity implements MenuProvider {
 
     public static final int INVENTORY_SIZE = 1;
@@ -41,31 +40,30 @@ public class TabletTableBlockEntity extends BlockEntity implements MenuProvider 
     // interact with the world yet
     private boolean hasLoaded = false;
 
-    private final ItemStacksResourceHandler inventory = new ItemStacksResourceHandler(INVENTORY_SIZE) {
-        // Override isValid here and not at slot level: otherwise the hoppers will be angry :(
+    private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE) {
         @Override
-        public boolean isValid(int index, ItemResource resource) {
-            return resource.getItem() == RelixItems.HIEROGLYPH_TABLET.get();
-        };
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return stack.is(RelixItems.HIEROGLYPH_TABLET.get());
+        }
 
         @Override
-        public void onContentsChanged(int slot, ItemStack stack) {
-            super.onContentsChanged(slot, stack);
+        protected void onContentsChanged(int slot) {
+            super.onContentsChanged(slot);
             setChanged();
             if (!hasLoaded) return;
             Level level = getLevel();
-            if (!level.isClientSide()) {
+            if (level != null && !level.isClientSide()) {
                 BlockState blockState = level.getBlockState(worldPosition);
-                boolean hasTablet = !inventory.copyToList().get(slot).isEmpty();
+                boolean hasTablet = !getStackInSlot(slot).isEmpty();
                 if (blockState.getValue(TabletTableBlock.HAS_TABLET) != hasTablet) {
                     level.setBlock(
-                        worldPosition, 
+                        worldPosition,
                         blockState.setValue(TabletTableBlock.HAS_TABLET, hasTablet),
                         Block.UPDATE_ALL
                     );
                 }
             }
-        }
+        };
     };
 
     private long randomSeed = RandomSource.create().nextLong();
@@ -81,7 +79,7 @@ public class TabletTableBlockEntity extends BlockEntity implements MenuProvider 
         return Component.translatable("container.relix.tablet_table");
     }
 
-    public ResourceHandler<ItemResource> getInventory() {
+    public IItemHandler getInventory() {
         return inventory;
     }
 
@@ -118,10 +116,10 @@ public class TabletTableBlockEntity extends BlockEntity implements MenuProvider 
     }
     
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
-        inventory.serialize(output.child("Inventory"));
-        ValueOutput hieroglyphs = output.child("Hieroglyphs");
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
+        tag.put("Inventory", inventory.serializeNBT(provider));
+        CompoundTag hieroglyphs = new CompoundTag();
         hieroglyphs.putLong("Seed", randomSeed);
         for (int i = 0; i < uncoveredClues.length; i++) {
             hieroglyphs.putBoolean(
@@ -129,39 +127,53 @@ public class TabletTableBlockEntity extends BlockEntity implements MenuProvider 
                 uncoveredClues[i]
             );
         }
+        tag.put("Hieroglyphs", hieroglyphs);
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
         hasLoaded = false;
-        inventory.deserialize(input.childOrEmpty("Inventory"));
-        ValueInput hieroglyphs = input.childOrEmpty("Hieroglyphs");
-        long loadedSeed = hieroglyphs.getLongOr(
-            "Seed", 
-            (long) 0
-        );
+        if (tag.contains("Inventory", Tag.TAG_COMPOUND)) {
+            inventory.deserializeNBT(provider, tag.getCompound("Inventory"));
+        }
+        CompoundTag hieroglyphs = tag.getCompound("Hieroglyphs");
+        long loadedSeed = hieroglyphs.getLong("Seed"); 
         if (loadedSeed != 0) {
             randomSeed = loadedSeed;
         }
         for (int i = 0; i < uncoveredClues.length; i++) {
-            uncoveredClues[i] = hieroglyphs.getBooleanOr(
-                "UncoveredClue" + i,
-                false
-            );
+            uncoveredClues[i] = hieroglyphs.getBoolean("UncoveredClue" + i);
         }
         hasLoaded = true;
     }
 
     @Override
-    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        Containers.dropContents(level, pos, inventory.copyToList());
+    public void setRemoved() {
+        if (level != null && !level.isClientSide()) {
+            Containers.dropItemStack(
+                level, 
+                worldPosition.getX(),
+                worldPosition.getY(),
+                worldPosition.getZ(),
+                inventory.getStackInSlot(0) 
+            );
+        }
+        super.setRemoved();
     }
 
     public List<Component> getClueTexts() {
         if (level instanceof ServerLevel serverLevel) {
+            RelixWorldData worldData = serverLevel.getDataStorage().computeIfAbsent(
+                RelixWorldData.factory(),
+                RelixWorldData.FILE_ID
+            );
+            if (worldData == null) {
+                worldData = new RelixWorldData(serverLevel);
+                serverLevel.getDataStorage().set(RelixWorldData.FILE_ID, worldData);
+            }
             List<SummonRequirement> pharaohConditions = 
-                serverLevel.getDataStorage().get(RelixWorldData.KEY).pharaohConditions();
+                worldData.pharaohConditions();
                 return pharaohConditions.stream()
                 .map(SummonRequirement::getClueText)
                 .toList();

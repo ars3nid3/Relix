@@ -2,54 +2,28 @@ package arsenide.relix.entity.renderer;
 
 import arsenide.relix.entity.AttendantEntity;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.model.monster.skeleton.SkeletonModel;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
-import net.minecraft.client.renderer.entity.ArmorModelSet;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
-import net.minecraft.client.renderer.entity.state.SkeletonRenderState;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Items;
+import net.minecraft.resources.ResourceLocation;
 
-public class AttendantEntityRenderer extends HumanoidMobRenderer<AttendantEntity, SkeletonRenderState, SkeletonModel<SkeletonRenderState>> {
+public class AttendantEntityRenderer extends HumanoidMobRenderer<AttendantEntity, HumanoidModel<AttendantEntity>> {
     
     public AttendantEntityRenderer(Context context) {
-        this(context, new SkeletonModel<>(context.bakeLayer(ModelLayers.PARCHED)), 0.5F);
-    }
-    
-    public AttendantEntityRenderer(Context context, SkeletonModel<SkeletonRenderState> model, float shadow) {
-        super(context, model, shadow);
+        super(context, new HumanoidModel<>(context.bakeLayer(ModelLayers.SKELETON)), 0.5F);
         this.addLayer(new HumanoidArmorLayer<>(
             this,
-            ArmorModelSet.bake(
-                ModelLayers.PARCHED_ARMOR,
-                context.getModelSet(),
-                SkeletonModel::new
-            ),
-            context.getEquipmentRenderer()
+            new HumanoidModel<>(context.bakeLayer(ModelLayers.SKELETON_INNER_ARMOR)),
+            new HumanoidModel<>(context.bakeLayer(ModelLayers.SKELETON_OUTER_ARMOR)),
+            context.getModelManager()
         ));
     }
 
-    private static final Identifier PARCHED_SKELETON_LOCATION = Identifier.withDefaultNamespace("textures/entity/skeleton/parched.png");
+    private static final ResourceLocation SKELETON_LOCATION = ResourceLocation.withDefaultNamespace("textures/entity/skeleton.png");
 
-
-    public void extractRenderState(AttendantEntity entity, SkeletonRenderState state, float partialTicks) {
-        super.extractRenderState(entity, state, partialTicks);
-        state.isAggressive = entity.isAggressive();
-        state.isShaking = false;
-        state.isHoldingBow = entity.getMainHandItem().is(Items.BOW);
-    }
-
-    protected boolean isShaking(SkeletonRenderState state) {
-        return state.isShaking;
-    }
-
-    public Identifier getTextureLocation(SkeletonRenderState state) {
-        return PARCHED_SKELETON_LOCATION;
-    }
-
-    public SkeletonRenderState createRenderState() {
-        return new SkeletonRenderState();
+    public ResourceLocation getTextureLocation(AttendantEntity entity) {
+        return SKELETON_LOCATION;
     }
     
 }

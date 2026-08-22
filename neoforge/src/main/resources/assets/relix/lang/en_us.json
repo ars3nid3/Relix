@@ -9,6 +9,7 @@
   "item.relix.pharaoh_headdress": "Pharaoh's Headdress",
   "item.relix.sacred_gold_upgrade_smithing_template": "Sacred Gold Upgrade",
   "item.relix.sacred_gold_armor.potion_resistance": "Potion Resistance",
+  "item.relix.smithing_template.sacred_gold_upgrade.upgrade_description": "Sacred Gold Upgrade",  
   "item.relix.smithing_template.sacred_gold_upgrade.applies_to": "Golden Armor",
   "item.relix.smithing_template.sacred_gold_upgrade.ingredients": "Sacred Gemstone",
   "item.relix.smithing_template.sacred_gold_upgrade.base_slot_description": "Add golden armor",
